@@ -6018,12 +6018,59 @@
   }
 ];
 
+    const TEAM_NAMES = [
+      "Dicky V's Diaper Dandies",
+      "Gus Johnson's GOTY Screamers", 
+      "Sister Jean's Prayer Warriors",
+      "One Shining Moemont",
+      "The Dentist's Final Flossers",
+      "Jimmy V's Perseverance Squad",
+      "Doug Gottlieb's Hot Takes",
+      "Bill Walton's Grateful Deadheads",
+      "Wooden Award Winners",
+      "The Teddy Buckets Brigade"
+    ];
+
+    const TOTAL_ROUNDS = 12;
+
     function PotterCup() {
       const [players] = useState(PLAYERS_DATA);
+      const [teams] = useState(TEAM_NAMES);
+      const [draftedPlayers, setDraftedPlayers] = useState({});
+      const [currentPick, setCurrentPick] = useState(1);
       const [sortConfig, setSortConfig] = useState({ key: 'seasonPPG', direction: 'desc' });
       const [searchTerm, setSearchTerm] = useState('');
       const [schoolFilter, setSchoolFilter] = useState('ALL');
       const [confFilter, setConfFilter] = useState('ALL');
+
+      // Calculate draft order (snake draft with re-randomization every 2 rounds)
+      const getDraftOrder = () => {
+        const order = [];
+        let baseOrder = teams.map((_, idx) => idx);
+        
+        for (let round = 1; round <= TOTAL_ROUNDS; round++) {
+          // Re-randomize every 2 rounds
+          if ((round - 1) % 2 === 0 && round > 1) {
+            baseOrder = [...baseOrder].reverse();
+          }
+          
+          // Snake: odd rounds go forward, even rounds go backward
+          if (round % 2 === 1) {
+            order.push(...baseOrder);
+          } else {
+            order.push(...[...baseOrder].reverse());
+          }
+        }
+        
+        return order;
+      };
+
+      const draftOrder = getDraftOrder();
+      const currentRound = Math.ceil(currentPick / teams.length);
+      const currentTeamIndex = draftOrder[currentPick - 1];
+      const currentTeam = teams[currentTeamIndex];
+      const totalPicks = teams.length * TOTAL_ROUNDS;
+      const isDraftComplete = currentPick > totalPicks;
 
       const uniqueSchools = useMemo(() => {
         return [...new Set(players.map(p => p.school))].sort();
@@ -6033,8 +6080,8 @@
         return [...new Set(players.map(p => p.conf))].sort();
       }, [players]);
 
-      const sortedPlayers = useMemo(() => {
-        let filtered = [...players];
+      const availablePlayers = useMemo(() => {
+        let filtered = players.filter(p => !draftedPlayers[p.id]);
         
         if (searchTerm) {
           filtered = filtered.filter(p => 
@@ -6060,7 +6107,7 @@
           }
           return 0;
         });
-      }, [players, sortConfig, searchTerm, schoolFilter, confFilter]);
+      }, [players, draftedPlayers, sortConfig, searchTerm, schoolFilter, confFilter]);
 
       const handleSort = (key) => {
         setSortConfig(prev => ({
@@ -6069,32 +6116,95 @@
         }));
       };
 
+      const handleDraft = (player) => {
+        if (isDraftComplete) return;
+        
+        setDraftedPlayers(prev => ({
+          ...prev,
+          [player.id]: currentTeam
+        }));
+        
+        setCurrentPick(prev => prev + 1);
+      };
+
+      const getTeamRoster = (team) => {
+        return Object.entries(draftedPlayers)
+          .filter(([_, draftedTeam]) => draftedTeam === team)
+          .map(([playerId, _]) => players.find(p => p.id === parseInt(playerId)))
+          .filter(Boolean);
+      };
+
       return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          {/* Header */}
           <header className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white shadow-lg">
-            <div className="max-w-7xl mx-auto px-4 py-6">
-              <h1 className="text-3xl md:text-4xl font-bold">🏆 The Potter Cup</h1>
-              <p className="text-[#E6F7FF] mt-1">NCAA Men's Basketball Tournament Draft - Player Cheatsheet</p>
+            <div className="max-w-full mx-auto px-4 py-4">
+              <h1 className="text-2xl md:text-3xl font-bold">🏆 The Potter Cup</h1>
+              <p className="text-[#E6F7FF] mt-1 text-sm">NCAA Men's Basketball Tournament Draft</p>
             </div>
           </header>
 
-          <main className="max-w-7xl mx-auto px-4 py-6">
-            <div className="bg-white rounded-lg shadow">
-              <div className="p-4 border-b">
-                <h2 className="text-xl font-bold mb-4">Top 500 D1 Scorers (2025-26 Season)</h2>
+          {/* Main Content with Sidebars */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Sidebar - Draft Order */}
+            <div className="w-64 bg-white border-r overflow-y-auto">
+              <div className="p-4 border-b bg-gray-50">
+                <h2 className="font-bold text-gray-900">Draft Order</h2>
+                <div className="text-xs text-gray-600 mt-1">
+                  Round {currentRound} of {TOTAL_ROUNDS}
+                </div>
+              </div>
+
+              {/* On the Clock */}
+              {!isDraftComplete && (
+                <div className="p-4 bg-gradient-to-r from-[#6CC24A] to-[#009CDE] text-white">
+                  <div className="text-xs opacity-90">Pick {currentPick}</div>
+                  <div className="font-bold text-sm mt-1">ON THE CLOCK</div>
+                  <div className="text-xs mt-2 line-clamp-2">{currentTeam}</div>
+                </div>
+              )}
+
+              {isDraftComplete && (
+                <div className="p-4 bg-yellow-50 border-b">
+                  <div className="font-bold text-yellow-800">🏆 Draft Complete!</div>
+                </div>
+              )}
+
+              {/* Upcoming Picks */}
+              <div className="p-4">
+                <div className="text-xs font-semibold text-gray-600 mb-2">Upcoming Picks</div>
+                <div className="space-y-2">
+                  {draftOrder.slice(currentPick, currentPick + 10).map((teamIdx, i) => {
+                    const pickNum = currentPick + i + 1;
+                    const round = Math.ceil(pickNum / teams.length);
+                    return (
+                      <div key={pickNum} className="text-xs p-2 bg-gray-50 rounded">
+                        <div className="text-gray-500">Pick {pickNum} (R{round})</div>
+                        <div className="font-medium text-gray-900 line-clamp-1">{teams[teamIdx]}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Center - Player Cheatsheet */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-4 bg-white border-b sticky top-0 z-10">
+                <h2 className="text-lg font-bold mb-3">Available Players</h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                   <input
                     type="text"
-                    placeholder="Search by player name or school..."
+                    placeholder="Search players..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#009CDE] focus:border-transparent"
+                    className="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#009CDE] focus:border-transparent"
                   />
                   <select
                     value={confFilter}
                     onChange={(e) => setConfFilter(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#009CDE] focus:border-transparent"
+                    className="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#009CDE] focus:border-transparent"
                   >
                     <option value="ALL">All Conferences</option>
                     {uniqueConferences.map(conf => (
@@ -6104,7 +6214,7 @@
                   <select
                     value={schoolFilter}
                     onChange={(e) => setSchoolFilter(e.target.value)}
-                    className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#009CDE] focus:border-transparent"
+                    className="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-[#009CDE] focus:border-transparent"
                   >
                     <option value="ALL">All Schools</option>
                     {uniqueSchools.map(school => (
@@ -6113,94 +6223,122 @@
                   </select>
                 </div>
 
-                <div className="text-sm text-gray-600">
-                  Showing {sortedPlayers.length} of {players.length} players
+                <div className="text-xs text-gray-600">
+                  {availablePlayers.length} available • Click to draft to {currentTeam}
                 </div>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 sticky top-0">
+                  <thead className="bg-gray-50 sticky top-[140px] z-10">
                     <tr>
                       <th 
                         onClick={() => handleSort('name')}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
                       >
                         Player {sortConfig.key === 'name' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
                       </th>
                       <th 
                         onClick={() => handleSort('school')}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
                       >
                         School {sortConfig.key === 'school' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
                       </th>
                       <th 
                         onClick={() => handleSort('position')}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
                       >
-                        Position {sortConfig.key === 'position' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                        Pos {sortConfig.key === 'position' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
                       </th>
                       <th 
                         onClick={() => handleSort('conf')}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
                       >
                         Conf {sortConfig.key === 'conf' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
                       </th>
                       <th 
-                        onClick={() => handleSort('year')}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                      >
-                        Year {sortConfig.key === 'year' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Seed
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Region
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        R1 Opponent
-                      </th>
-                      <th 
                         onClick={() => handleSort('seasonPPG')}
-                        className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                        className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase cursor-pointer hover:bg-gray-100"
                       >
                         PPG {sortConfig.key === 'seasonPPG' && (sortConfig.direction === 'desc' ? '↓' : '↑')}
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase">
+                        Action
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {sortedPlayers.map((player) => (
-                      <tr key={player.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 whitespace-nowrap font-medium text-gray-900">
+                    {availablePlayers.map((player) => (
+                      <tr key={player.id} className="hover:bg-blue-50">
+                        <td className="px-3 py-2 whitespace-nowrap font-medium text-sm text-gray-900">
                           {player.name}
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-700">{player.school}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-600 text-sm">{player.position}</td>
-                        <td className="px-4 py-3 whitespace-nowrap">
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-700">{player.school}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-600">{player.position}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
                           <span className="px-2 py-1 text-xs font-semibold rounded-full bg-[#009CDE]/20 text-[#009CDE]">
                             {player.conf}
                           </span>
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-600 text-sm">{player.year}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{player.seed || '-'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-gray-600">{player.region || '-'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{player.opponent || '-'}</td>
-                        <td className="px-4 py-3 whitespace-nowrap font-bold text-lg text-[#009CDE]">{player.seasonPPG}</td>
+                        <td className="px-3 py-2 whitespace-nowrap font-bold text-sm text-[#009CDE]">{player.seasonPPG}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <button
+                            onClick={() => handleDraft(player)}
+                            disabled={isDraftComplete}
+                            className="px-3 py-1 text-xs font-medium text-white bg-[#009CDE] rounded hover:bg-[#0077C8] disabled:bg-gray-300 disabled:cursor-not-allowed"
+                          >
+                            Draft
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
-          </main>
 
-          <footer className="bg-white border-t mt-12 py-6">
-            <div className="max-w-7xl mx-auto px-4 text-center text-gray-600 text-sm">
-              <p>Potter Cup • NCAA Tournament Draft Tracker</p>
-              <p className="mt-1">Real 2025-26 season stats • Top 500 D1 scorers • Ready for March 2026!</p>
+            {/* Right Sidebar - Team Rosters */}
+            <div className="w-80 bg-white border-l overflow-y-auto">
+              <div className="p-4 border-b bg-gray-50 sticky top-0 z-10">
+                <h2 className="font-bold text-gray-900">Team Rosters</h2>
+              </div>
+
+              <div className="divide-y">
+                {teams.map((team) => {
+                  const roster = getTeamRoster(team);
+                  const isOnClock = team === currentTeam && !isDraftComplete;
+                  return (
+                    <div key={team} className={`p-3 ${isOnClock ? 'bg-green-50' : ''}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-sm text-gray-900 line-clamp-2">
+                          {team}
+                          {isOnClock && <span className="ml-2 text-xs text-green-600">⏰</span>}
+                        </h3>
+                        <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                          {roster.length}/{TOTAL_ROUNDS}
+                        </span>
+                      </div>
+                      {roster.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">No picks yet</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {roster.map((player, idx) => (
+                            <div key={player.id} className="text-xs">
+                              <span className="text-gray-500">{idx + 1}.</span>
+                              {' '}
+                              <span className="font-medium">{player.name}</span>
+                              {' '}
+                              <span className="text-gray-500">({player.seasonPPG})</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </footer>
+          </div>
         </div>
       );
     }
