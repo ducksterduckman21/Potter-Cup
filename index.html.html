@@ -18,6 +18,9 @@
       z-index: 10;
       background: white;
     }
+    :root {
+      --ncaa-blue: #009CDE;
+    }
   </style>
 </head>
 <body class="bg-gray-50">
@@ -26,10 +29,10 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
 
-    // Test data using ONLY 2025-26 season stats (games from Nov 3, 2025 onwards)
-    // These are current D1 players - will be updated with actual tournament bracket on Selection Sunday
+    // Test data using current 2025-26 season players - will be updated with actual tournament field
     const MOCK_PLAYERS = [
       { id: 1, name: "Cameron Boozer", school: "Duke", position: "F", seed: 1, region: "East", opponent: "16 Norfolk State", seasonPPG: 22.7, last4PPG: 24.2 },
+      { id: 2, name: "AJ Dybantsa", school: "BYU", position: "F", seed: 2, region: "West", opponent: "15 Lipscomb", seasonPPG: 25.1, last4PPG: 27.8 },
       { id: 2, name: "AJ Dybantsa", school: "BYU", position: "F", seed: 2, region: "West", opponent: "15 Lipscomb", seasonPPG: 25.1, last4PPG: 27.8 },
       { id: 3, name: "Darryn Peterson", school: "Kansas", position: "G", seed: 1, region: "South", opponent: "16 Alabama State", seasonPPG: 19.5, last4PPG: 21.3 },
       { id: 4, name: "JT Toppin", school: "Texas Tech", position: "F", seed: 3, region: "Midwest", opponent: "14 Akron", seasonPPG: 21.8, last4PPG: 23.5 },
@@ -39,7 +42,7 @@
       { id: 8, name: "Labaron Philon", school: "Alabama", position: "G", seed: 4, region: "West", opponent: "13 Charleston", seasonPPG: 21.3, last4PPG: 22.7 },
       { id: 9, name: "Jayden Quaintance", school: "Kentucky", position: "F", seed: 2, region: "East", opponent: "15 Vermont", seasonPPG: 15.7, last4PPG: 17.2 },
       { id: 10, name: "Darius Acuff Jr.", school: "Arkansas", position: "G", seed: 5, region: "South", opponent: "12 Drake", seasonPPG: 18.4, last4PPG: 20.1 },
-      { id: 11, name: "Graham Ike", school: "Gonzaga", position: "C", seed: 6, region: "West", opponent: "11 VCU", seasonPPG: 18.5, last4PPG: 19.8 },
+      { id: 11, name: "Graham Ike", school: "Gonzaga", position: "F", seed: 6, region: "West", opponent: "11 VCU", seasonPPG: 18.5, last4PPG: 19.8 },
       { id: 12, name: "Braden Smith", school: "Purdue", position: "G", seed: 4, region: "Midwest", opponent: "13 Colgate", seasonPPG: 16.8, last4PPG: 18.3 },
       { id: 13, name: "Mikel Brown Jr.", school: "Louisville", position: "G", seed: 7, region: "East", opponent: "10 Clemson", seasonPPG: 17.9, last4PPG: 19.6 },
       { id: 14, name: "Kasparas Jakucionis", school: "Illinois", position: "G", seed: 3, region: "West", opponent: "14 UC Irvine", seasonPPG: 17.2, last4PPG: 18.9 },
@@ -47,8 +50,8 @@
       { id: 16, name: "Cade Tyson", school: "Minnesota", position: "F", seed: 8, region: "South", opponent: "9 TCU", seasonPPG: 19.7, last4PPG: 21.3 },
       { id: 17, name: "Nique Clifford", school: "Colorado State", position: "G", seed: 9, region: "West", opponent: "8 Marquette", seasonPPG: 19.0, last4PPG: 20.5 },
       { id: 18, name: "Emanuel Sharp", school: "Houston", position: "G", seed: 2, region: "South", opponent: "15 High Point", seasonPPG: 14.8, last4PPG: 16.2 },
-      { id: 19, name: "Koby Brea", school: "Kentucky", position: "G", seed: 2, region: "East", opponent: "15 Vermont", seasonPPG: 12.8, last4PPG: 14.2 },
-      { id: 20, name: "Chaz Lanier", school: "Tennessee", position: "G", seed: 4, region: "South", opponent: "13 Princeton", seasonPPG: 18.7, last4PPG: 20.2 },
+      { id: 19, name: "Jaxson Robinson", school: "Kentucky", position: "G", seed: 2, region: "East", opponent: "15 Vermont", seasonPPG: 13.9, last4PPG: 15.4 },
+      { id: 20, name: "Chris Ledlum", school: "Tennessee", position: "F", seed: 4, region: "South", opponent: "13 Princeton", seasonPPG: 15.2, last4PPG: 16.8 },
       { id: 21, name: "Ace Baldwin Jr.", school: "Penn State", position: "G", seed: 7, region: "Midwest", opponent: "10 Oklahoma", seasonPPG: 14.6, last4PPG: 16.1 },
       { id: 22, name: "Hunter Sallis", school: "Wake Forest", position: "G", seed: 8, region: "East", opponent: "9 USC", seasonPPG: 16.8, last4PPG: 18.3 },
       { id: 23, name: "Norchad Omier", school: "Baylor", position: "F", seed: 6, region: "Midwest", opponent: "11 Saint Mary's", seasonPPG: 14.3, last4PPG: 15.7 },
@@ -56,47 +59,47 @@
       { id: 25, name: "Payton Sandfort", school: "Iowa", position: "F", seed: 6, region: "South", opponent: "11 Mississippi State", seasonPPG: 16.4, last4PPG: 17.9 },
       { id: 26, name: "VJ Edgecombe", school: "Baylor", position: "G", seed: 6, region: "Midwest", opponent: "11 Saint Mary's", seasonPPG: 15.1, last4PPG: 16.5 },
       { id: 27, name: "Achor Achor", school: "Creighton", position: "F", seed: 5, region: "Midwest", opponent: "12 Grand Canyon", seasonPPG: 13.7, last4PPG: 15.1 },
-      { id: 28, name: "Brayden Burries", school: "Arizona", position: "G", seed: 1, region: "West", opponent: "16 Longwood", seasonPPG: 15.5, last4PPG: 17.1 },
-      { id: 29, name: "Max Abmas", school: "Texas", position: "G", seed: 7, region: "South", opponent: "10 Florida", seasonPPG: 14.2, last4PPG: 15.7 },
-      { id: 30, name: "Tucker DeVries", school: "Drake", position: "G", seed: 12, region: "South", opponent: "5 Arkansas", seasonPPG: 19.3, last4PPG: 21.1 },
-      { id: 31, name: "Javon Small", school: "West Virginia", position: "G", seed: 10, region: "Midwest", opponent: "7 Penn State", seasonPPG: 17.8, last4PPG: 19.3 },
-      { id: 32, name: "Trey Kaufman-Renn", school: "Purdue", position: "F", seed: 4, region: "Midwest", opponent: "13 Colgate", seasonPPG: 15.9, last4PPG: 17.3 },
-      { id: 33, name: "Ian Jackson", school: "North Carolina", position: "G", seed: 1, region: "Midwest", opponent: "16 Mount St. Mary's", seasonPPG: 16.7, last4PPG: 18.1 },
-      { id: 34, name: "Malik Reneau", school: "Indiana", position: "F", seed: 9, region: "Midwest", opponent: "8 Utah State", seasonPPG: 15.4, last4PPG: 16.8 },
-      { id: 35, name: "Coleman Hawkins", school: "Kansas State", position: "F", seed: 8, region: "Midwest", opponent: "9 Indiana", seasonPPG: 14.7, last4PPG: 16.1 },
-      { id: 36, name: "Bryce Hopkins", school: "Providence", position: "F", seed: 11, region: "East", opponent: "6 Maryland", seasonPPG: 17.1, last4PPG: 18.6 },
-      { id: 37, name: "Jeremy Fears Jr.", school: "Michigan State", position: "G", seed: 4, region: "East", opponent: "13 Western Kentucky", seasonPPG: 14.9, last4PPG: 16.3 },
-      { id: 38, name: "Jaden Akins", school: "Michigan State", position: "G", seed: 4, region: "East", opponent: "13 Western Kentucky", seasonPPG: 13.6, last4PPG: 15.1 },
-      { id: 39, name: "Tre White", school: "Illinois", position: "G", seed: 3, region: "West", opponent: "14 UC Irvine", seasonPPG: 15.8, last4PPG: 17.2 },
-      { id: 40, name: "Ryan Kalkbrenner", school: "Creighton", position: "C", seed: 5, region: "Midwest", opponent: "12 Grand Canyon", seasonPPG: 16.8, last4PPG: 18.2 },
-      { id: 41, name: "Tyrese Proctor", school: "Duke", position: "G", seed: 1, region: "East", opponent: "16 Norfolk State", seasonPPG: 13.9, last4PPG: 15.3 },
-      { id: 42, name: "Oumar Ballo", school: "Indiana", position: "C", seed: 9, region: "Midwest", opponent: "8 Utah State", seasonPPG: 14.8, last4PPG: 16.2 },
-      { id: 43, name: "Zeke Mayo", school: "Kansas", position: "G", seed: 1, region: "South", opponent: "16 Alabama State", seasonPPG: 15.3, last4PPG: 16.7 },
-      { id: 44, name: "Nolan Hickman", school: "Gonzaga", position: "G", seed: 6, region: "West", opponent: "11 VCU", seasonPPG: 13.4, last4PPG: 14.8 },
-      { id: 45, name: "Owen Freeman", school: "Iowa", position: "C", seed: 6, region: "South", opponent: "11 Mississippi State", seasonPPG: 15.7, last4PPG: 17.1 },
-      { id: 46, name: "Kam Jones", school: "Marquette", position: "G", seed: 8, region: "West", opponent: "9 Colorado State", seasonPPG: 16.2, last4PPG: 17.6 },
-      { id: 47, name: "Alex Karaban", school: "UConn", position: "F", seed: 5, region: "West", opponent: "12 San Diego State", seasonPPG: 15.9, last4PPG: 17.3 },
-      { id: 48, name: "Xaivian Lee", school: "Florida", position: "G", seed: 10, region: "South", opponent: "7 Texas", seasonPPG: 14.8, last4PPG: 16.2 },
-      { id: 49, name: "Great Osobor", school: "Washington", position: "F", seed: 9, region: "South", opponent: "8 Minnesota", seasonPPG: 16.4, last4PPG: 17.8 },
-      { id: 50, name: "David N'Guessan", school: "Kansas State", position: "F", seed: 8, region: "Midwest", opponent: "9 Indiana", seasonPPG: 13.7, last4PPG: 15.1 },
-      { id: 51, name: "Derik Queen", school: "Maryland", position: "F", seed: 6, region: "East", opponent: "11 Providence", seasonPPG: 17.3, last4PPG: 18.9 },
-      { id: 52, name: "Jarin Stevenson", school: "Alabama", position: "F", seed: 4, region: "West", opponent: "13 Charleston", seasonPPG: 13.2, last4PPG: 14.6 },
-      { id: 53, name: "PJ Hall", school: "Clemson", position: "F", seed: 10, region: "East", opponent: "7 Louisville", seasonPPG: 16.1, last4PPG: 17.5 },
-      { id: 54, name: "Tyrese Hunter", school: "Memphis", position: "G", seed: 11, region: "South", opponent: "6 Iowa", seasonPPG: 15.2, last4PPG: 16.6 },
-      { id: 55, name: "Nick Okorie", school: "Stanford", position: "G", seed: 13, region: "South", opponent: "4 Tennessee", seasonPPG: 22.8, last4PPG: 24.3 },
-      { id: 56, name: "Coen Carr", school: "Michigan State", position: "F", seed: 4, region: "East", opponent: "13 Western Kentucky", seasonPPG: 12.3, last4PPG: 13.7 },
-      { id: 57, name: "Bennett Stirtz", school: "Drake", position: "G", seed: 12, region: "South", opponent: "5 Arkansas", seasonPPG: 18.9, last4PPG: 20.4 },
-      { id: 58, name: "Flory Bidunga", school: "Kansas", position: "C", seed: 1, region: "South", opponent: "16 Alabama State", seasonPPG: 12.4, last4PPG: 13.8 },
-      { id: 59, name: "Thomas Haugh", school: "Florida", position: "F", seed: 10, region: "South", opponent: "7 Texas", seasonPPG: 14.1, last4PPG: 15.5 },
-      { id: 60, name: "Nate Ament", school: "Tennessee", position: "F", seed: 4, region: "South", opponent: "13 Princeton", seasonPPG: 14.9, last4PPG: 16.3 },
-      { id: 61, name: "Robert Wright III", school: "BYU", position: "G", seed: 2, region: "West", opponent: "15 Lipscomb", seasonPPG: 16.2, last4PPG: 17.6 },
-      { id: 62, name: "Zuby Ejiofor", school: "St. John's", position: "F", seed: 7, region: "West", opponent: "10 Saint Mary's", seasonPPG: 13.8, last4PPG: 15.2 },
-      { id: 63, name: "Joshua Jefferson", school: "Iowa State", position: "F", seed: 3, region: "Midwest", opponent: "14 South Dakota State", seasonPPG: 16.7, last4PPG: 18.1 },
-      { id: 64, name: "Silas Demary", school: "UConn", position: "G", seed: 5, region: "West", opponent: "12 San Diego State", seasonPPG: 11.9, last4PPG: 13.3 },
-      { id: 65, name: "Jaden Bradley", school: "Arizona", position: "G", seed: 1, region: "West", opponent: "16 Longwood", seasonPPG: 12.6, last4PPG: 14.0 },
-      { id: 66, name: "Keyshawn Hall", school: "Auburn", position: "G", seed: 3, region: "South", opponent: "14 Lipscomb", seasonPPG: 14.3, last4PPG: 15.7 },
-      { id: 67, name: "Chris Ledlum", school: "Tennessee", position: "F", seed: 4, region: "South", opponent: "13 Princeton", seasonPPG: 15.2, last4PPG: 16.8 },
-      { id: 68, name: "Hannes Steinbach", school: "Washington", position: "C", seed: 9, region: "South", opponent: "8 Minnesota", seasonPPG: 13.4, last4PPG: 14.8 }
+      { id: 28, name: "Isaiah Collier", school: "USC", position: "G", seed: 9, region: "East", opponent: "8 Wake Forest", seasonPPG: 16.3, last4PPG: 17.8 },
+      { id: 29, name: "Brayden Burries", school: "Arizona", position: "G", seed: 1, region: "West", opponent: "16 Longwood", seasonPPG: 15.5, last4PPG: 17.1 },
+      { id: 30, name: "Chaz Lanier", school: "Tennessee", position: "G", seed: 4, region: "South", opponent: "13 Princeton", seasonPPG: 18.7, last4PPG: 20.2 },
+      { id: 31, name: "Max Abmas", school: "Texas", position: "G", seed: 7, region: "South", opponent: "10 Florida", seasonPPG: 14.2, last4PPG: 15.7 },
+      { id: 32, name: "Tucker DeVries", school: "Drake", position: "G", seed: 12, region: "South", opponent: "5 Arkansas", seasonPPG: 19.3, last4PPG: 21.1 },
+      { id: 33, name: "Koby Brea", school: "Kentucky", position: "G", seed: 2, region: "East", opponent: "15 Vermont", seasonPPG: 12.8, last4PPG: 14.2 },
+      { id: 34, name: "Javon Small", school: "West Virginia", position: "G", seed: 10, region: "Midwest", opponent: "7 Penn State", seasonPPG: 17.8, last4PPG: 19.3 },
+      { id: 35, name: "Trey Kaufman-Renn", school: "Purdue", position: "F", seed: 4, region: "Midwest", opponent: "13 Colgate", seasonPPG: 15.9, last4PPG: 17.3 },
+      { id: 36, name: "Johni Broome", school: "Auburn", position: "C", seed: 3, region: "South", opponent: "14 South Dakota State", seasonPPG: 17.2, last4PPG: 18.6 },
+      { id: 37, name: "Mark Sears", school: "Alabama", position: "G", seed: 4, region: "West", opponent: "13 Charleston", seasonPPG: 16.9, last4PPG: 18.4 },
+      { id: 38, name: "Ian Jackson", school: "North Carolina", position: "G", seed: 1, region: "Midwest", opponent: "16 Mount St. Mary's", seasonPPG: 16.7, last4PPG: 18.1 },
+      { id: 39, name: "Malik Reneau", school: "Indiana", position: "F", seed: 9, region: "Midwest", opponent: "8 Utah State", seasonPPG: 15.4, last4PPG: 16.8 },
+      { id: 40, name: "Khristian Lander", school: "Western Kentucky", position: "G", seed: 13, region: "East", opponent: "4 Michigan State", seasonPPG: 18.2, last4PPG: 19.7 },
+      { id: 41, name: "Coleman Hawkins", school: "Kansas State", position: "F", seed: 8, region: "Midwest", opponent: "9 Indiana", seasonPPG: 14.7, last4PPG: 16.1 },
+      { id: 42, name: "Bryce Hopkins", school: "Providence", position: "F", seed: 11, region: "East", opponent: "6 Maryland", seasonPPG: 17.1, last4PPG: 18.6 },
+      { id: 43, name: "Jeremy Fears Jr.", school: "Michigan State", position: "G", seed: 4, region: "East", opponent: "13 Western Kentucky", seasonPPG: 14.9, last4PPG: 16.3 },
+      { id: 44, name: "Jaden Akins", school: "Michigan State", position: "G", seed: 4, region: "East", opponent: "13 Western Kentucky", seasonPPG: 13.6, last4PPG: 15.1 },
+      { id: 45, name: "Tre White", school: "Illinois", position: "G", seed: 3, region: "West", opponent: "14 UC Irvine", seasonPPG: 15.8, last4PPG: 17.2 },
+      { id: 46, name: "Donovan Clingan", school: "UConn", position: "C", seed: 5, region: "West", opponent: "12 San Diego State", seasonPPG: 14.3, last4PPG: 15.7 },
+      { id: 47, name: "Ryan Kalkbrenner", school: "Creighton", position: "C", seed: 5, region: "Midwest", opponent: "12 Grand Canyon", seasonPPG: 16.8, last4PPG: 18.2 },
+      { id: 48, name: "Tyrese Proctor", school: "Duke", position: "G", seed: 1, region: "East", opponent: "16 Norfolk State", seasonPPG: 13.9, last4PPG: 15.3 },
+      { id: 49, name: "Oumar Ballo", school: "Indiana", position: "C", seed: 9, region: "Midwest", opponent: "8 Utah State", seasonPPG: 14.8, last4PPG: 16.2 },
+      { id: 50, name: "Dajuan Harris Jr.", school: "Kansas", position: "G", seed: 1, region: "South", opponent: "16 Alabama State", seasonPPG: 9.7, last4PPG: 10.8 },
+      { id: 51, name: "Zeke Mayo", school: "Kansas", position: "G", seed: 1, region: "South", opponent: "16 Alabama State", seasonPPG: 15.3, last4PPG: 16.7 },
+      { id: 52, name: "Nolan Hickman", school: "Gonzaga", position: "G", seed: 6, region: "West", opponent: "11 VCU", seasonPPG: 13.4, last4PPG: 14.8 },
+      { id: 53, name: "Owen Freeman", school: "Iowa", position: "C", seed: 6, region: "South", opponent: "11 Mississippi State", seasonPPG: 15.7, last4PPG: 17.1 },
+      { id: 54, name: "Kam Jones", school: "Marquette", position: "G", seed: 8, region: "West", opponent: "9 Colorado State", seasonPPG: 16.2, last4PPG: 17.6 },
+      { id: 55, name: "Alex Karaban", school: "UConn", position: "F", seed: 5, region: "West", opponent: "12 San Diego State", seasonPPG: 15.9, last4PPG: 17.3 },
+      { id: 56, name: "Xaivian Lee", school: "Florida", position: "G", seed: 10, region: "South", opponent: "7 Texas", seasonPPG: 14.8, last4PPG: 16.2 },
+      { id: 57, name: "Great Osobor", school: "Washington", position: "F", seed: 9, region: "South", opponent: "8 Cade Tyson", seasonPPG: 16.4, last4PPG: 17.8 },
+      { id: 58, name: "David N'Guessan", school: "Kansas State", position: "F", seed: 8, region: "Midwest", opponent: "9 Indiana", seasonPPG: 13.7, last4PPG: 15.1 },
+      { id: 59, name: "Jaylon Tyson", school: "California", position: "F", seed: 11, region: "West", opponent: "6 Gonzaga", seasonPPG: 15.8, last4PPG: 17.2 },
+      { id: 60, name: "Derik Queen", school: "Maryland", position: "F", seed: 6, region: "East", opponent: "11 Providence", seasonPPG: 17.3, last4PPG: 18.9 },
+      { id: 61, name: "Jarin Stevenson", school: "Alabama", position: "F", seed: 4, region: "West", opponent: "13 Charleston", seasonPPG: 13.2, last4PPG: 14.6 },
+      { id: 62, name: "PJ Hall", school: "Clemson", position: "F", seed: 10, region: "East", opponent: "7 Louisville", seasonPPG: 16.1, last4PPG: 17.5 },
+      { id: 63, name: "Isiaih Mosley", school: "Missouri", position: "G", seed: 12, region: "West", opponent: "5 UConn", seasonPPG: 14.9, last4PPG: 16.3 },
+      { id: 64, name: "Tyrese Hunter", school: "Memphis", position: "G", seed: 11, region: "South", opponent: "6 Iowa", seasonPPG: 15.2, last4PPG: 16.6 },
+      { id: 65, name: "Nick Okorie", school: "Stanford", position: "G", seed: 13, region: "South", opponent: "4 Tennessee", seasonPPG: 22.8, last4PPG: 24.3 },
+      { id: 66, name: "Carter Bryant", school: "Arizona", position: "F", seed: 1, region: "West", opponent: "16 Longwood", seasonPPG: 11.8, last4PPG: 13.2 },
+      { id: 67, name: "Coen Carr", school: "Michigan State", position: "F", seed: 4, region: "East", opponent: "13 Western Kentucky", seasonPPG: 12.3, last4PPG: 13.7 },
+      { id: 68, name: "Bennett Stirtz", school: "Drake", position: "G", seed: 12, region: "South", opponent: "5 Arkansas", seasonPPG: 18.9, last4PPG: 20.4 }
     ];
 
     const MOCK_TEAMS = [
@@ -633,7 +636,7 @@
           <footer className="bg-white border-t mt-12 py-6">
             <div className="max-w-7xl mx-auto px-4 text-center text-gray-600 text-sm">
               <p>Potter Cup • NCAA Tournament Draft Tracker</p>
-              <p className="mt-1">Test data with current 2025-26 D1 players - Ready for March 2026 tournament!</p>
+              <p className="mt-1">Demo with mock data - Ready for 2026 tournament!</p>
             </div>
           </footer>
         </div>
@@ -644,3 +647,4 @@
   </script>
 </body>
 </html>
+
