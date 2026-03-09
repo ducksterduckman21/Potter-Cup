@@ -8,12 +8,34 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: white;
+    }
+    .bracket-line {
+      border: 2px solid #333;
+    }
+    .matchup-connector {
+      position: relative;
+    }
+    .matchup-connector::after {
+      content: '';
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      width: 20px;
+      height: 2px;
+      background: #333;
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
+<body>
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState } = React;
+    const { useState, useEffect } = React;
 
     const ALL_PLAYERS = [
   {
@@ -279,55 +301,62 @@
   }
 ];
 
-    // Bracket structure - test with 5 teams
-    const BRACKET = {
-      "East": [
-        { seed: 1, team: "Queens", opponent: "", oppSeed: 16 },
-        { seed: 8, team: "", opponent: "", oppSeed: 9 },
-        { seed: 5, team: "", opponent: "", oppSeed: 12 },
-        { seed: 4, team: "", opponent: "", oppSeed: 13 },
-        { seed: 6, team: "", opponent: "", oppSeed: 11 },
-        { seed: 3, team: "", opponent: "", oppSeed: 14 },
-        { seed: 7, team: "", opponent: "", oppSeed: 10 },
-        { seed: 2, team: "High Point", opponent: "", oppSeed: 15 }
-      ],
-      "West": [
-        { seed: 1, team: "Northern Iowa", opponent: "", oppSeed: 16 },
-        { seed: 8, team: "", opponent: "", oppSeed: 9 },
-        { seed: 5, team: "", opponent: "", oppSeed: 12 },
-        { seed: 4, team: "", opponent: "", oppSeed: 13 },
-        { seed: 6, team: "", opponent: "", oppSeed: 11 },
-        { seed: 3, team: "", opponent: "", oppSeed: 14 },
-        { seed: 7, team: "", opponent: "", oppSeed: 10 },
-        { seed: 2, team: "", opponent: "", oppSeed: 15 }
-      ],
-      "South": [
-        { seed: 1, team: "LIU", opponent: "", oppSeed: 16 },
-        { seed: 8, team: "", opponent: "", oppSeed: 9 },
-        { seed: 5, team: "", opponent: "", oppSeed: 12 },
-        { seed: 4, team: "", opponent: "", oppSeed: 13 },
-        { seed: 6, team: "", opponent: "", oppSeed: 11 },
-        { seed: 3, team: "", opponent: "", oppSeed: 14 },
-        { seed: 7, team: "", opponent: "", oppSeed: 10 },
-        { seed: 2, team: "", opponent: "", oppSeed: 15 }
-      ],
-      "Midwest": [
-        { seed: 1, team: "Tennessee St.", opponent: "", oppSeed: 16 },
-        { seed: 8, team: "", opponent: "", oppSeed: 9 },
-        { seed: 5, team: "", opponent: "", oppSeed: 12 },
-        { seed: 4, team: "", opponent: "", oppSeed: 13 },
-        { seed: 6, team: "", opponent: "", oppSeed: 11 },
-        { seed: 3, team: "", opponent: "", oppSeed: 14 },
-        { seed: 7, team: "", opponent: "", oppSeed: 10 },
-        { seed: 2, team: "", opponent: "", oppSeed: 15 }
-      ]
+    const BRACKET_DATA = {
+      east: {
+        round1: [
+          { seed: 1, team: "Queens", vs: 16 },
+          { seed: 8, team: "", vs: 9 },
+          { seed: 5, team: "", vs: 12 },
+          { seed: 4, team: "", vs: 13 },
+          { seed: 6, team: "", vs: 11 },
+          { seed: 3, team: "", vs: 14 },
+          { seed: 7, team: "", vs: 10 },
+          { seed: 2, team: "High Point", vs: 15 }
+        ]
+      },
+      west: {
+        round1: [
+          { seed: 1, team: "Northern Iowa", vs: 16 },
+          { seed: 8, team: "", vs: 9 },
+          { seed: 5, team: "", vs: 12 },
+          { seed: 4, team: "", vs: 13 },
+          { seed: 6, team: "", vs: 11 },
+          { seed: 3, team: "", vs: 14 },
+          { seed: 7, team: "", vs: 10 },
+          { seed: 2, team: "", vs: 15 }
+        ]
+      },
+      south: {
+        round1: [
+          { seed: 1, team: "LIU", vs: 16 },
+          { seed: 8, team: "", vs: 9 },
+          { seed: 5, team: "", vs: 12 },
+          { seed: 4, team: "", vs: 13 },
+          { seed: 6, team: "", vs: 11 },
+          { seed: 3, team: "", vs: 14 },
+          { seed: 7, team: "", vs: 10 },
+          { seed: 2, team: "", vs: 15 }
+        ]
+      },
+      midwest: {
+        round1: [
+          { seed: 1, team: "Tennessee St.", vs: 16 },
+          { seed: 8, team: "", vs: 9 },
+          { seed: 5, team: "", vs: 12 },
+          { seed: 4, team: "", vs: 13 },
+          { seed: 6, team: "", vs: 11 },
+          { seed: 3, team: "", vs: 14 },
+          { seed: 7, team: "", vs: 10 },
+          { seed: 2, team: "", vs: 15 }
+        ]
+      }
     };
 
-    function TeamModal({ team, onClose }) {
+    function TeamModal({ team, draftedPlayers, onClose }) {
       if (!team) return null;
 
       const teamPlayers = ALL_PLAYERS
-        .filter(p => p.school === team)
+        .filter(p => p.school === team && !draftedPlayers.has(p.id))
         .sort((a, b) => b.seasonPPG - a.seasonPPG);
 
       return (
@@ -342,7 +371,7 @@
             <div className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white p-6 flex justify-between items-center">
               <div>
                 <h2 className="text-2xl font-bold">{team}</h2>
-                <p className="text-sm opacity-90">Player Roster - {teamPlayers.length} players</p>
+                <p className="text-sm opacity-90">Available Players - {teamPlayers.length} remaining</p>
               </div>
               <button
                 onClick={onClose}
@@ -355,58 +384,70 @@
             </div>
 
             <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Player</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Position</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Year</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">PPG</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {teamPlayers.map((player) => (
-                    <tr key={player.id} className="hover:bg-blue-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{player.position}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600">{player.year}</td>
-                      <td className="px-4 py-3 font-bold text-[#009CDE]">{player.seasonPPG}</td>
+              {teamPlayers.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <p className="text-lg font-semibold">All players from {team} have been drafted!</p>
+                </div>
+              ) : (
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Player</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Position</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Year</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">PPG</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {teamPlayers.map((player) => (
+                      <tr key={player.id} className="hover:bg-blue-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{player.position}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{player.year}</td>
+                        <td className="px-4 py-3 font-bold text-[#009CDE]">{player.seasonPPG}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         </div>
       );
     }
 
-    function BracketRegion({ region, games, onTeamClick }) {
+    function TeamSlot({ team, seed, onClick, className = "" }) {
       return (
-        <div className="bg-white rounded-lg shadow p-4">
-          <h3 className="text-xl font-bold mb-4 text-center text-[#009CDE]">{region} Region</h3>
-          <div className="space-y-2">
+        <div 
+          className={`flex items-center border-2 border-gray-800 bg-white h-7 cursor-pointer hover:bg-gray-50 transition-colors ${className}`}
+          onClick={() => team && onClick(team)}
+        >
+          <div className="w-8 bg-gray-800 text-white text-center text-xs font-bold h-full flex items-center justify-center">
+            {seed || "—"}
+          </div>
+          <div className="flex-1 px-2 text-sm font-semibold truncate">
+            {team || ""}
+          </div>
+        </div>
+      );
+    }
+
+    function Matchup({ game1, game2, onTeamClick, showConnector = true }) {
+      return (
+        <div className={`relative ${showConnector ? 'matchup-connector' : ''}`}>
+          <TeamSlot team={game1.team} seed={game1.seed} onClick={onTeamClick} className="mb-px" />
+          <TeamSlot team={game2?.team || ""} seed={game2?.vs} onClick={onTeamClick} />
+        </div>
+      );
+    }
+
+    function Round({ games, onTeamClick, label, spacing = "gap-6" }) {
+      return (
+        <div className="flex flex-col">
+          <div className="text-xs font-bold text-gray-700 text-center mb-2 uppercase">{label}</div>
+          <div className={`flex flex-col ${spacing}`}>
             {games.map((game, idx) => (
-              <div key={idx} className="border rounded-lg p-3 hover:bg-gray-50">
-                <div className="flex items-center justify-between mb-2">
-                  <button
-                    onClick={() => game.team && onTeamClick(game.team)}
-                    className={`flex-1 text-left font-semibold ${game.team ? 'text-[#009CDE] hover:underline cursor-pointer' : 'text-gray-400'}`}
-                    disabled={!game.team}
-                  >
-                    {game.seed} {game.team || 'TBD'}
-                  </button>
-                </div>
-                <div className="flex items-center justify-between border-t pt-2">
-                  <button
-                    onClick={() => game.opponent && onTeamClick(game.opponent)}
-                    className={`flex-1 text-left font-semibold ${game.opponent ? 'text-[#009CDE] hover:underline cursor-pointer' : 'text-gray-400'}`}
-                    disabled={!game.opponent}
-                  >
-                    {game.oppSeed} {game.opponent || 'TBD'}
-                  </button>
-                </div>
-              </div>
+              <Matchup key={idx} game1={game} onTeamClick={onTeamClick} />
             ))}
           </div>
         </div>
@@ -415,34 +456,151 @@
 
     function Bracket() {
       const [selectedTeam, setSelectedTeam] = useState(null);
+      const [draftedPlayers, setDraftedPlayers] = useState(new Set());
+
+      // Sync with draft app via localStorage
+      useEffect(() => {
+        const syncDrafts = () => {
+          try {
+            const drafts = JSON.parse(localStorage.getItem('potterCupDrafts') || '[]');
+            setDraftedPlayers(new Set(drafts.map(d => d.playerId)));
+          } catch (e) {
+            console.error('Failed to sync drafts:', e);
+          }
+        };
+
+        syncDrafts();
+        const interval = setInterval(syncDrafts, 1000);
+        return () => clearInterval(interval);
+      }, []);
 
       return (
-        <div className="min-h-screen bg-gray-50">
-          <header className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white shadow-lg">
-            <div className="max-w-7xl mx-auto px-4 py-6">
-              <h1 className="text-3xl md:text-4xl font-bold">2026 NCAA Tournament Bracket</h1>
-              <p className="text-[#E6F7FF] mt-1">Click any team name to view their roster</p>
+        <div className="min-h-screen bg-white">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-red-600 via-blue-800 to-red-600 text-white py-4 px-6">
+            <div className="text-center">
+              <h1 className="text-3xl font-black tracking-tight">2026 NCAA DIVISION I MEN'S BASKETBALL CHAMPIONSHIP</h1>
             </div>
-          </header>
+          </div>
 
-          <main className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <BracketRegion region="East" games={BRACKET.East} onTeamClick={setSelectedTeam} />
-              <BracketRegion region="West" games={BRACKET.West} onTeamClick={setSelectedTeam} />
-              <BracketRegion region="South" games={BRACKET.South} onTeamClick={setSelectedTeam} />
-              <BracketRegion region="Midwest" games={BRACKET.Midwest} onTeamClick={setSelectedTeam} />
+          {/* Round Labels */}
+          <div className="bg-gray-100 border-y-2 border-gray-300 py-2 px-6">
+            <div className="flex justify-between text-xs font-bold text-gray-700 max-w-[1600px] mx-auto">
+              <div className="flex gap-12">
+                <span>FIRST ROUND<br/>MARCH 18-20</span>
+                <span>SECOND ROUND<br/>MARCH 21-22</span>
+                <span>SWEET 16<br/>MARCH 26-27</span>
+                <span>ELITE 8<br/>MARCH 28-29</span>
+              </div>
+              <div className="text-center">
+                <span>NATIONAL SEMIFINALS<br/>APRIL 4</span>
+              </div>
+              <div className="flex gap-12">
+                <span className="text-right">ELITE 8<br/>MARCH 28-29</span>
+                <span className="text-right">SWEET 16<br/>MARCH 26-27</span>
+                <span className="text-right">SECOND ROUND<br/>MARCH 21-22</span>
+                <span className="text-right">FIRST ROUND<br/>MARCH 18-20</span>
+              </div>
             </div>
+          </div>
 
-            <div className="mt-8 bg-blue-50 border-l-4 border-[#009CDE] p-4 rounded">
-              <p className="text-sm text-gray-700">
-                <strong>Note:</strong> Bracket will be populated after Selection Sunday (March 15, 2026). 
-                Test teams shown for demonstration purposes.
-              </p>
+          {/* Main Bracket */}
+          <div className="p-8 overflow-x-auto">
+            <div className="min-w-[1400px] max-w-[1600px] mx-auto">
+              
+              {/* Top Half - East & West */}
+              <div className="flex justify-between gap-8 mb-16">
+                {/* East Region */}
+                <div className="flex gap-4">
+                  <div className="text-right pr-4 font-bold text-sm text-gray-700 flex items-center">EAST</div>
+                  <Round games={BRACKET_DATA.east.round1} onTeamClick={setSelectedTeam} label="First Round" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.east.round1[0], BRACKET_DATA.east.round1[2], BRACKET_DATA.east.round1[4], BRACKET_DATA.east.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.east.round1[0], BRACKET_DATA.east.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.east.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
+                </div>
+
+                {/* West Region */}
+                <div className="flex gap-4 flex-row-reverse">
+                  <div className="text-left pl-4 font-bold text-sm text-gray-700 flex items-center">WEST</div>
+                  <Round games={BRACKET_DATA.west.round1} onTeamClick={setSelectedTeam} label="First Round" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.west.round1[0], BRACKET_DATA.west.round1[2], BRACKET_DATA.west.round1[4], BRACKET_DATA.west.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.west.round1[0], BRACKET_DATA.west.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.west.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
+                </div>
+              </div>
+
+              {/* Final Four */}
+              <div className="relative my-16">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-16 py-12 rounded-lg shadow-2xl text-center">
+                    <div className="mb-4">
+                      <svg className="w-32 h-32 mx-auto text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                      </svg>
+                    </div>
+                    <div className="text-4xl font-black mb-2">FINAL FOUR</div>
+                    <div className="text-sm font-semibold mb-4 opacity-90">INDIANAPOLIS</div>
+                    <div className="flex gap-8 justify-center mb-8">
+                      <div className="w-48">
+                        <div className="text-xs font-bold mb-2">SEMIFINALS</div>
+                        <TeamSlot team={""} seed={""} onClick={setSelectedTeam} className="mb-2" />
+                        <TeamSlot team={""} seed={""} onClick={setSelectedTeam} />
+                      </div>
+                    </div>
+                    <div className="border-t-2 border-white/30 pt-6 mt-6">
+                      <div className="text-sm font-bold mb-2 uppercase">National Championship • April 6</div>
+                      <div className="w-64 mx-auto">
+                        <TeamSlot team={""} seed={""} onClick={setSelectedTeam} className="ring-4 ring-yellow-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Half - South & Midwest */}
+              <div className="flex justify-between gap-8 mt-16">
+                {/* South Region */}
+                <div className="flex gap-4">
+                  <div className="text-right pr-4 font-bold text-sm text-gray-700 flex items-center">SOUTH</div>
+                  <Round games={BRACKET_DATA.south.round1} onTeamClick={setSelectedTeam} label="First Round" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.south.round1[0], BRACKET_DATA.south.round1[2], BRACKET_DATA.south.round1[4], BRACKET_DATA.south.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.south.round1[0], BRACKET_DATA.south.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.south.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
+                </div>
+
+                {/* Midwest Region */}
+                <div className="flex gap-4 flex-row-reverse">
+                  <div className="text-left pl-4 font-bold text-sm text-gray-700 flex items-center">MIDWEST</div>
+                  <Round games={BRACKET_DATA.midwest.round1} onTeamClick={setSelectedTeam} label="First Round" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.midwest.round1[0], BRACKET_DATA.midwest.round1[2], BRACKET_DATA.midwest.round1[4], BRACKET_DATA.midwest.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.midwest.round1[0], BRACKET_DATA.midwest.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
+                  <div className="w-px bg-gray-300"></div>
+                  <Round games={[BRACKET_DATA.midwest.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
+                </div>
+              </div>
+
             </div>
-          </main>
+          </div>
+
+          {/* Potter Cup Logo Footer */}
+          <div className="bg-gray-100 border-t-2 border-gray-300 py-8 text-center">
+            <div className="text-4xl font-black text-[#009CDE] mb-2">⚡ POTTER CUP ⚡</div>
+            <div className="text-sm text-gray-600">Click any team name to view available players</div>
+          </div>
 
           {selectedTeam && (
-            <TeamModal team={selectedTeam} onClose={() => setSelectedTeam(null)} />
+            <TeamModal team={selectedTeam} draftedPlayers={draftedPlayers} onClose={() => setSelectedTeam(null)} />
           )}
         </div>
       );
