@@ -13,7 +13,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo } = React;
+    const { useState, useMemo, useEffect } = React;
 
     const PLAYERS_DATA = [
   {
@@ -384,8 +384,25 @@
     function PotterCup() {
       const [players] = useState(PLAYERS_DATA);
       const [teams] = useState(TEAM_NAMES);
-      const [draftedPlayers, setDraftedPlayers] = useState({});
-      const [currentPick, setCurrentPick] = useState(1);
+      const [draftedPlayers, setDraftedPlayers] = useState(() => {
+        // Load saved draft state on initial render
+        try {
+          const saved = localStorage.getItem('potterCupDraftState');
+          return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+          console.error('Failed to load draft state:', e);
+          return {};
+        }
+      });
+      const [currentPick, setCurrentPick] = useState(() => {
+        // Load saved current pick
+        try {
+          const saved = localStorage.getItem('potterCupCurrentPick');
+          return saved ? parseInt(saved) : 1;
+        } catch (e) {
+          return 1;
+        }
+      });
       const [sortConfig, setSortConfig] = useState({ key: 'seasonPPG', direction: 'desc' });
       const [searchTerm, setSearchTerm] = useState('');
       const [schoolFilter, setSchoolFilter] = useState('ALL');
@@ -470,9 +487,13 @@
         };
         
         setDraftedPlayers(newDrafted);
+        const newPick = currentPick + 1;
+        setCurrentPick(newPick);
         
-        // Save to localStorage for bracket sync
+        // Save to localStorage for persistence and bracket sync
         try {
+          localStorage.setItem('potterCupDraftState', JSON.stringify(newDrafted));
+          localStorage.setItem('potterCupCurrentPick', newPick.toString());
           const draftedPlayerIds = Object.keys(newDrafted).map(id => parseInt(id));
           localStorage.setItem('potterCupDrafts', JSON.stringify(
             draftedPlayerIds.map(id => ({ playerId: id }))
@@ -480,8 +501,45 @@
         } catch (e) {
           console.error('Failed to save draft state:', e);
         }
+      };
+
+      const handleUndraft = (playerId) => {
+        const newDrafted = { ...draftedPlayers };
+        delete newDrafted[playerId];
         
-        setCurrentPick(prev => prev + 1);
+        setDraftedPlayers(newDrafted);
+        
+        // Move pick back one spot
+        if (currentPick > 1) {
+          const newPick = currentPick - 1;
+          setCurrentPick(newPick);
+          
+          // Save updated state
+          try {
+            localStorage.setItem('potterCupDraftState', JSON.stringify(newDrafted));
+            localStorage.setItem('potterCupCurrentPick', newPick.toString());
+            const draftedPlayerIds = Object.keys(newDrafted).map(id => parseInt(id));
+            localStorage.setItem('potterCupDrafts', JSON.stringify(
+              draftedPlayerIds.map(id => ({ playerId: id }))
+            ));
+          } catch (e) {
+            console.error('Failed to save draft state:', e);
+          }
+        }
+      };
+
+      const handleResetDraft = () => {
+        if (confirm('Are you sure you want to reset the entire draft? This cannot be undone.')) {
+          setDraftedPlayers({});
+          setCurrentPick(1);
+          try {
+            localStorage.removeItem('potterCupDraftState');
+            localStorage.removeItem('potterCupCurrentPick');
+            localStorage.removeItem('potterCupDrafts');
+          } catch (e) {
+            console.error('Failed to clear draft state:', e);
+          }
+        }
       };
 
       const getTeamRoster = (team) => {
@@ -678,7 +736,17 @@
 
             <div className="w-80 bg-white border-l overflow-y-auto">
               <div className="p-4 border-b bg-gray-50">
-                <h2 className="font-bold text-gray-900">Team Rosters</h2>
+                <div className="flex justify-between items-center mb-2">
+                  <h2 className="font-bold text-gray-900">Team Rosters</h2>
+                  <button
+                    onClick={handleResetDraft}
+                    className="text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded transition-colors"
+                    title="Reset entire draft"
+                  >
+                    Reset Draft
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600">Click ❌ to undo a pick</p>
               </div>
 
               <div className="divide-y">
@@ -701,12 +769,21 @@
                       ) : (
                         <div className="space-y-1">
                           {roster.map((player, idx) => (
-                            <div key={player.id} className="text-xs">
-                              <span className="text-gray-500">{idx + 1}.</span>
-                              {' '}
-                              <span className="font-medium">{player.name}</span>
-                              {' '}
-                              <span className="text-gray-500">({player.seasonPPG})</span>
+                            <div key={player.id} className="text-xs flex items-center justify-between group hover:bg-gray-50 px-1 py-0.5 rounded">
+                              <div>
+                                <span className="text-gray-500">{idx + 1}.</span>
+                                {' '}
+                                <span className="font-medium">{player.name}</span>
+                                {' '}
+                                <span className="text-gray-500">({player.seasonPPG})</span>
+                              </div>
+                              <button
+                                onClick={() => handleUndraft(player.id)}
+                                className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 transition-opacity ml-2"
+                                title="Undo this pick"
+                              >
+                                ❌
+                              </button>
                             </div>
                           ))}
                         </div>
