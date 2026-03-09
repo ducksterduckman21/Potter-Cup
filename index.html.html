@@ -464,10 +464,22 @@
       const handleDraft = (player) => {
         if (isDraftComplete) return;
         
-        setDraftedPlayers(prev => ({
-          ...prev,
+        const newDrafted = {
+          ...draftedPlayers,
           [player.id]: currentTeam
-        }));
+        };
+        
+        setDraftedPlayers(newDrafted);
+        
+        // Save to localStorage for bracket sync
+        try {
+          const draftedPlayerIds = Object.keys(newDrafted).map(id => parseInt(id));
+          localStorage.setItem('potterCupDrafts', JSON.stringify(
+            draftedPlayerIds.map(id => ({ playerId: id }))
+          ));
+        } catch (e) {
+          console.error('Failed to save draft state:', e);
+        }
         
         setCurrentPick(prev => prev + 1);
       };
