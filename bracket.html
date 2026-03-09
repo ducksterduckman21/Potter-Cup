@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 NCAA Tournament Bracket | Potter Cup</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    const ALL_PLAYERS = [
+  {
+    "name": "Aaron Nkrumah",
+    "school": "Tennessee St.",
+    "position": "Wing G",
+    "conf": "OVC",
+    "year": "Sr",
+    "seasonPPG": 17.6,
+    "id": 1
+  },
+  {
+    "name": "Travis Harper II",
+    "school": "Tennessee St.",
+    "position": "Wing G",
+    "conf": "OVC",
+    "year": "Sr",
+    "seasonPPG": 17.3,
+    "id": 2
+  },
+  {
+    "name": "Jamal Fuller",
+    "school": "LIU",
+    "position": "Wing G",
+    "conf": "NEC",
+    "year": "Sr",
+    "seasonPPG": 16.6,
+    "id": 3
+  },
+  {
+    "name": "Terry Anderson",
+    "school": "High Point",
+    "position": "Wing G",
+    "conf": "BSth",
+    "year": "Sr",
+    "seasonPPG": 16.0,
+    "id": 4
+  },
+  {
+    "name": "Rob Martin",
+    "school": "High Point",
+    "position": "Scoring PG",
+    "conf": "BSth",
+    "year": "Sr",
+    "seasonPPG": 15.3,
+    "id": 5
+  },
+  {
+    "name": "Malachi Davis",
+    "school": "LIU",
+    "position": "Scoring PG",
+    "conf": "NEC",
+    "year": "Sr",
+    "seasonPPG": 14.1,
+    "id": 6
+  },
+  {
+    "name": "Greg Gordon",
+    "school": "LIU",
+    "position": "Wing G",
+    "conf": "NEC",
+    "year": "Sr",
+    "seasonPPG": 13.8,
+    "id": 7
+  },
+  {
+    "name": "Trey Campbell",
+    "school": "Northern Iowa",
+    "position": "Scoring PG",
+    "conf": "MVC",
+    "year": "Sr",
+    "seasonPPG": 13.7,
+    "id": 8
+  },
+  {
+    "name": "Nasir Mann",
+    "school": "Queens",
+    "position": "Wing G",
+    "conf": "ASun",
+    "year": "Sr",
+    "seasonPPG": 13.4,
+    "id": 9
+  },
+  {
+    "name": "Yoav Berman",
+    "school": "Queens",
+    "position": "Combo G",
+    "conf": "ASun",
+    "year": "So",
+    "seasonPPG": 12.6,
+    "id": 10
+  },
+  {
+    "name": "Leon Bond III",
+    "school": "Northern Iowa",
+    "position": "Wing G",
+    "conf": "MVC",
+    "year": "Jr",
+    "seasonPPG": 11.9,
+    "id": 11
+  },
+  {
+    "name": "Jordan Watford",
+    "school": "Queens",
+    "position": "Pure PG",
+    "conf": "ASun",
+    "year": "Fr",
+    "seasonPPG": 11.9,
+    "id": 12
+  },
+  {
+    "name": "Chris Ashby",
+    "school": "Queens",
+    "position": "Combo G",
+    "conf": "ASun",
+    "year": "Sr",
+    "seasonPPG": 11.7,
+    "id": 13
+  },
+  {
+    "name": "Dante Harris",
+    "school": "Tennessee St.",
+    "position": "Scoring PG",
+    "conf": "OVC",
+    "year": "Sr",
+    "seasonPPG": 11.7,
+    "id": 14
+  },
+  {
+    "name": "Avantae Parker",
+    "school": "Queens",
+    "position": "PF/C",
+    "conf": "ASun",
+    "year": "Jr",
+    "seasonPPG": 11.3,
+    "id": 15
+  },
+  {
+    "name": "Will Hornseth",
+    "school": "Northern Iowa",
+    "position": "Wing F",
+    "conf": "MVC",
+    "year": "So",
+    "seasonPPG": 11.2,
+    "id": 16
+  },
+  {
+    "name": "Carson Schwieger",
+    "school": "Queens",
+    "position": "Wing F",
+    "conf": "ASun",
+    "year": "So",
+    "seasonPPG": 10.2,
+    "id": 17
+  },
+  {
+    "name": "Jomo Goings",
+    "school": "LIU",
+    "position": "Wing G",
+    "conf": "NEC",
+    "year": "Jr",
+    "seasonPPG": 10.2,
+    "id": 18
+  },
+  {
+    "name": "Ben Schwieger",
+    "school": "Northern Iowa",
+    "position": "Wing F",
+    "conf": "MVC",
+    "year": "Sr",
+    "seasonPPG": 9.9,
+    "id": 19
+  },
+  {
+    "name": "Antoine Lorick III",
+    "school": "Tennessee St.",
+    "position": "PF/C",
+    "conf": "OVC",
+    "year": "Jr",
+    "seasonPPG": 9.5,
+    "id": 20
+  },
+  {
+    "name": "Owen Aquino",
+    "school": "High Point",
+    "position": "PF/C",
+    "conf": "BSth",
+    "year": "Sr",
+    "seasonPPG": 9.4,
+    "id": 21
+  },
+  {
+    "name": "Conrad Martinez",
+    "school": "High Point",
+    "position": "Scoring PG",
+    "conf": "BSth",
+    "year": "Jr",
+    "seasonPPG": 9.3,
+    "id": 22
+  },
+  {
+    "name": "Scotty Washington",
+    "school": "High Point",
+    "position": "Wing G",
+    "conf": "BSth",
+    "year": "Sr",
+    "seasonPPG": 8.7,
+    "id": 23
+  },
+  {
+    "name": "Maban Jabriel",
+    "school": "Queens",
+    "position": "Stretch 4",
+    "conf": "ASun",
+    "year": "So",
+    "seasonPPG": 7.6,
+    "id": 24
+  },
+  {
+    "name": "Mason Porter-Brown",
+    "school": "LIU",
+    "position": "Wing G",
+    "conf": "NEC",
+    "year": "Jr",
+    "seasonPPG": 7.4,
+    "id": 25
+  },
+  {
+    "name": "Braden Hausen",
+    "school": "High Point",
+    "position": "Wing G",
+    "conf": "BSth",
+    "year": "So",
+    "seasonPPG": 6.8,
+    "id": 26
+  },
+  {
+    "name": "Jalen Pitre",
+    "school": "Tennessee St.",
+    "position": "PF/C",
+    "conf": "OVC",
+    "year": "Jr",
+    "seasonPPG": 6.5,
+    "id": 27
+  },
+  {
+    "name": "Max Weisbrod",
+    "school": "Northern Iowa",
+    "position": "Combo G",
+    "conf": "MVC",
+    "year": "Sr",
+    "seasonPPG": 6.5,
+    "id": 28
+  },
+  {
+    "name": "Carlous Williams",
+    "school": "Tennessee St.",
+    "position": "Wing F",
+    "conf": "OVC",
+    "year": "Sr",
+    "seasonPPG": 5.7,
+    "id": 29
+  }
+];
+
+    // Bracket structure - test with 5 teams
+    const BRACKET = {
+      "East": [
+        { seed: 1, team: "Queens", opponent: "", oppSeed: 16 },
+        { seed: 8, team: "", opponent: "", oppSeed: 9 },
+        { seed: 5, team: "", opponent: "", oppSeed: 12 },
+        { seed: 4, team: "", opponent: "", oppSeed: 13 },
+        { seed: 6, team: "", opponent: "", oppSeed: 11 },
+        { seed: 3, team: "", opponent: "", oppSeed: 14 },
+        { seed: 7, team: "", opponent: "", oppSeed: 10 },
+        { seed: 2, team: "High Point", opponent: "", oppSeed: 15 }
+      ],
+      "West": [
+        { seed: 1, team: "Northern Iowa", opponent: "", oppSeed: 16 },
+        { seed: 8, team: "", opponent: "", oppSeed: 9 },
+        { seed: 5, team: "", opponent: "", oppSeed: 12 },
+        { seed: 4, team: "", opponent: "", oppSeed: 13 },
+        { seed: 6, team: "", opponent: "", oppSeed: 11 },
+        { seed: 3, team: "", opponent: "", oppSeed: 14 },
+        { seed: 7, team: "", opponent: "", oppSeed: 10 },
+        { seed: 2, team: "", opponent: "", oppSeed: 15 }
+      ],
+      "South": [
+        { seed: 1, team: "LIU", opponent: "", oppSeed: 16 },
+        { seed: 8, team: "", opponent: "", oppSeed: 9 },
+        { seed: 5, team: "", opponent: "", oppSeed: 12 },
+        { seed: 4, team: "", opponent: "", oppSeed: 13 },
+        { seed: 6, team: "", opponent: "", oppSeed: 11 },
+        { seed: 3, team: "", opponent: "", oppSeed: 14 },
+        { seed: 7, team: "", opponent: "", oppSeed: 10 },
+        { seed: 2, team: "", opponent: "", oppSeed: 15 }
+      ],
+      "Midwest": [
+        { seed: 1, team: "Tennessee St.", opponent: "", oppSeed: 16 },
+        { seed: 8, team: "", opponent: "", oppSeed: 9 },
+        { seed: 5, team: "", opponent: "", oppSeed: 12 },
+        { seed: 4, team: "", opponent: "", oppSeed: 13 },
+        { seed: 6, team: "", opponent: "", oppSeed: 11 },
+        { seed: 3, team: "", opponent: "", oppSeed: 14 },
+        { seed: 7, team: "", opponent: "", oppSeed: 10 },
+        { seed: 2, team: "", opponent: "", oppSeed: 15 }
+      ]
+    };
+
+    function TeamModal({ team, onClose }) {
+      if (!team) return null;
+
+      const teamPlayers = ALL_PLAYERS
+        .filter(p => p.school === team)
+        .sort((a, b) => b.seasonPPG - a.seasonPPG);
+
+      return (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={onClose}
+        >
+          <div 
+            className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white p-6 flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">{team}</h2>
+                <p className="text-sm opacity-90">Player Roster - {teamPlayers.length} players</p>
+              </div>
+              <button
+                onClick={onClose}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+              <table className="w-full">
+                <thead className="bg-gray-50 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Player</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Position</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Year</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">PPG</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {teamPlayers.map((player) => (
+                    <tr key={player.id} className="hover:bg-blue-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{player.position}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{player.year}</td>
+                      <td className="px-4 py-3 font-bold text-[#009CDE]">{player.seasonPPG}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function BracketRegion({ region, games, onTeamClick }) {
+      return (
+        <div className="bg-white rounded-lg shadow p-4">
+          <h3 className="text-xl font-bold mb-4 text-center text-[#009CDE]">{region} Region</h3>
+          <div className="space-y-2">
+            {games.map((game, idx) => (
+              <div key={idx} className="border rounded-lg p-3 hover:bg-gray-50">
+                <div className="flex items-center justify-between mb-2">
+                  <button
+                    onClick={() => game.team && onTeamClick(game.team)}
+                    className={`flex-1 text-left font-semibold ${game.team ? 'text-[#009CDE] hover:underline cursor-pointer' : 'text-gray-400'}`}
+                    disabled={!game.team}
+                  >
+                    {game.seed} {game.team || 'TBD'}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between border-t pt-2">
+                  <button
+                    onClick={() => game.opponent && onTeamClick(game.opponent)}
+                    className={`flex-1 text-left font-semibold ${game.opponent ? 'text-[#009CDE] hover:underline cursor-pointer' : 'text-gray-400'}`}
+                    disabled={!game.opponent}
+                  >
+                    {game.oppSeed} {game.opponent || 'TBD'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function Bracket() {
+      const [selectedTeam, setSelectedTeam] = useState(null);
+
+      return (
+        <div className="min-h-screen bg-gray-50">
+          <header className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 py-6">
+              <h1 className="text-3xl md:text-4xl font-bold">2026 NCAA Tournament Bracket</h1>
+              <p className="text-[#E6F7FF] mt-1">Click any team name to view their roster</p>
+            </div>
+          </header>
+
+          <main className="max-w-7xl mx-auto px-4 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <BracketRegion region="East" games={BRACKET.East} onTeamClick={setSelectedTeam} />
+              <BracketRegion region="West" games={BRACKET.West} onTeamClick={setSelectedTeam} />
+              <BracketRegion region="South" games={BRACKET.South} onTeamClick={setSelectedTeam} />
+              <BracketRegion region="Midwest" games={BRACKET.Midwest} onTeamClick={setSelectedTeam} />
+            </div>
+
+            <div className="mt-8 bg-blue-50 border-l-4 border-[#009CDE] p-4 rounded">
+              <p className="text-sm text-gray-700">
+                <strong>Note:</strong> Bracket will be populated after Selection Sunday (March 15, 2026). 
+                Test teams shown for demonstration purposes.
+              </p>
+            </div>
+          </main>
+
+          {selectedTeam && (
+            <TeamModal team={selectedTeam} onClose={() => setSelectedTeam(null)} />
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.render(<Bracket />, document.getElementById('root'));
+  </script>
+</body>
+</html>
