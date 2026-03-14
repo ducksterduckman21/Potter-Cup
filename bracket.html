@@ -14,20 +14,39 @@
       padding: 0;
       background: white;
     }
-    .bracket-line {
-      border: 2px solid #333;
-    }
-    .matchup-connector {
+    
+    .game-pair {
       position: relative;
     }
-    .matchup-connector::after {
+    
+    .game-slot {
+      position: relative;
+      height: 30px;
+      margin-bottom: 2px;
+    }
+    
+    .r1-connector {
+      position: relative;
+    }
+    .r1-connector::after {
       content: '';
       position: absolute;
-      right: -20px;
+      right: -16px;
       top: 50%;
-      width: 20px;
+      width: 16px;
       height: 2px;
       background: #333;
+    }
+    
+    .pair-line {
+      position: absolute;
+      right: -16px;
+      width: 2px;
+      background: #333;
+    }
+    
+    .round-spacer {
+      width: 32px;
     }
   </style>
 </head>
@@ -39,317 +58,1343 @@
 
     const ALL_PLAYERS = [
   {
+    "rank": "21",
+    "year": "Jr",
+    "name": "Nasir Whitlock",
+    "school": "Lehigh",
+    "conf": "Pat",
+    "position": "Combo G",
+    "seasonPPG": 20.8,
+    "id": 1,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "25",
+    "year": "Sr",
+    "name": "Cruz Davis",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "Scoring PG",
+    "seasonPPG": 20.7,
+    "id": 2,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "42",
+    "year": "Sr",
+    "name": "Graham Ike",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "PF/C",
+    "seasonPPG": 19.7,
+    "id": 3,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "117",
+    "year": "So",
+    "name": "Gavin Doty",
+    "school": "Siena",
+    "conf": "MAAC",
+    "position": "Wing G",
+    "seasonPPG": 17.7,
+    "id": 4,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "119",
+    "year": "Sr",
     "name": "Aaron Nkrumah",
     "school": "Tennessee St.",
-    "position": "Wing G",
     "conf": "OVC",
-    "year": "Sr",
-    "seasonPPG": 17.6,
-    "id": 1
+    "position": "Wing G",
+    "seasonPPG": 17.7,
+    "id": 5,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "144",
+    "year": "Sr",
     "name": "Travis Harper II",
     "school": "Tennessee St.",
-    "position": "Wing G",
     "conf": "OVC",
-    "year": "Sr",
-    "seasonPPG": 17.3,
-    "id": 2
+    "position": "Wing G",
+    "seasonPPG": 17.4,
+    "id": 6,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "150",
+    "year": "Fr",
+    "name": "Alex Wilkins",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "Pure PG",
+    "seasonPPG": 17.3,
+    "id": 7,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "169",
+    "year": "Fr",
+    "name": "Larry Johnson",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Wing G",
+    "seasonPPG": 16.9,
+    "id": 8,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "185",
+    "year": "Sr",
     "name": "Jamal Fuller",
     "school": "LIU",
-    "position": "Wing G",
     "conf": "NEC",
-    "year": "Sr",
+    "position": "Wing G",
     "seasonPPG": 16.6,
-    "id": 3
+    "id": 9,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "243",
+    "year": "Sr",
     "name": "Terry Anderson",
     "school": "High Point",
-    "position": "Wing G",
     "conf": "BSth",
-    "year": "Sr",
-    "seasonPPG": 16.0,
-    "id": 4
+    "position": "Wing G",
+    "seasonPPG": 15.8,
+    "id": 10,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "282",
+    "year": "Fr",
+    "name": "Preston Edmead",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "Scoring PG",
+    "seasonPPG": 15.3,
+    "id": 11,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "301",
+    "year": "Jr",
+    "name": "Victor Valdes",
+    "school": "Troy",
+    "conf": "SB",
+    "position": "Scoring PG",
+    "seasonPPG": 15.0,
+    "id": 12,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "306",
+    "year": "Sr",
     "name": "Rob Martin",
     "school": "High Point",
-    "position": "Scoring PG",
     "conf": "BSth",
-    "year": "Sr",
-    "seasonPPG": 15.3,
-    "id": 5
+    "position": "Scoring PG",
+    "seasonPPG": 14.9,
+    "id": 13,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "347",
+    "year": "Jr",
+    "name": "Thomas Dowd",
+    "school": "Troy",
+    "conf": "SB",
+    "position": "PF/C",
+    "seasonPPG": 14.6,
+    "id": 14,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "348",
+    "year": "So",
+    "name": "Hank Alvey",
+    "school": "Lehigh",
+    "conf": "Pat",
+    "position": "PF/C",
+    "seasonPPG": 14.6,
+    "id": 15,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "359",
+    "year": "Sr",
     "name": "Malachi Davis",
     "school": "LIU",
-    "position": "Scoring PG",
     "conf": "NEC",
-    "year": "Sr",
-    "seasonPPG": 14.1,
-    "id": 6
+    "position": "Scoring PG",
+    "seasonPPG": 14.5,
+    "id": 16,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "401",
+    "year": "Jr",
+    "name": "Tyshawn Archie",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Scoring PG",
+    "seasonPPG": 14.1,
+    "id": 17,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "407",
+    "year": "Jr",
+    "name": "Damari Wheeler-Thomas",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "Combo G",
+    "seasonPPG": 14.1,
+    "id": 18,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "413",
+    "year": "Fr",
+    "name": "Jackson Rasmussen",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "Wing G",
+    "seasonPPG": 14.1,
+    "id": 19,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "464",
+    "year": "Sr",
     "name": "Greg Gordon",
     "school": "LIU",
-    "position": "Wing G",
     "conf": "NEC",
-    "year": "Sr",
-    "seasonPPG": 13.8,
-    "id": 7
+    "position": "Wing G",
+    "seasonPPG": 13.7,
+    "id": 20,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "491",
+    "year": "Jr",
+    "name": "Cooper Bowser",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "C",
+    "seasonPPG": 13.6,
+    "id": 21,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "494",
+    "year": "So",
+    "name": "Kolton Mitchell",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "Scoring PG",
+    "seasonPPG": 13.6,
+    "id": 22,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "536",
+    "year": "Sr",
     "name": "Trey Campbell",
     "school": "Northern Iowa",
-    "position": "Scoring PG",
     "conf": "MVC",
-    "year": "Sr",
-    "seasonPPG": 13.7,
-    "id": 8
+    "position": "Scoring PG",
+    "seasonPPG": 13.3,
+    "id": 23,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "554",
+    "year": "Fr",
+    "name": "Michael Cooper",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "Combo G",
+    "seasonPPG": 13.2,
+    "id": 24,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "558",
+    "year": "Sr",
     "name": "Nasir Mann",
     "school": "Queens",
-    "position": "Wing G",
     "conf": "ASun",
-    "year": "Sr",
-    "seasonPPG": 13.4,
-    "id": 9
+    "position": "Wing G",
+    "seasonPPG": 13.2,
+    "id": 25,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "566",
+    "year": "So",
+    "name": "Asa Thomas",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "Wing G",
+    "seasonPPG": 13.1,
+    "id": 26,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "580",
+    "year": "So",
     "name": "Yoav Berman",
     "school": "Queens",
+    "conf": "ASun",
     "position": "Combo G",
-    "conf": "ASun",
-    "year": "So",
-    "seasonPPG": 12.6,
-    "id": 10
+    "seasonPPG": 13.0,
+    "id": 27,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
-    "name": "Leon Bond III",
-    "school": "Northern Iowa",
-    "position": "Wing G",
-    "conf": "MVC",
-    "year": "Jr",
-    "seasonPPG": 11.9,
-    "id": 11
-  },
-  {
-    "name": "Jordan Watford",
-    "school": "Queens",
-    "position": "Pure PG",
-    "conf": "ASun",
-    "year": "Fr",
-    "seasonPPG": 11.9,
-    "id": 12
-  },
-  {
-    "name": "Chris Ashby",
-    "school": "Queens",
-    "position": "Combo G",
-    "conf": "ASun",
+    "rank": "589",
     "year": "Sr",
-    "seasonPPG": 11.7,
-    "id": 13
+    "name": "Justice Shoats",
+    "school": "Siena",
+    "conf": "MAAC",
+    "position": "Scoring PG",
+    "seasonPPG": 12.9,
+    "id": 28,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "596",
+    "year": "Sr",
+    "name": "Theo Seng",
+    "school": "Troy",
+    "conf": "SB",
+    "position": "Wing F",
+    "seasonPPG": 12.9,
+    "id": 29,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "600",
+    "year": "So",
+    "name": "Cooper Campbell",
+    "school": "Troy",
+    "conf": "SB",
+    "position": "Scoring PG",
+    "seasonPPG": 12.8,
+    "id": 30,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "644",
+    "year": "Sr",
+    "name": "Biko Johnson",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "Combo G",
+    "seasonPPG": 12.5,
+    "id": 31,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "680",
+    "year": "Sr",
+    "name": "Markhi Strickland",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "PF/C",
+    "seasonPPG": 12.3,
+    "id": 32,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "686",
+    "year": "Jr",
+    "name": "Trevian Carson",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "Wing G",
+    "seasonPPG": 12.2,
+    "id": 33,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "747",
+    "year": "Sr",
+    "name": "Isaiah Brickner",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "Wing G",
+    "seasonPPG": 11.9,
+    "id": 34,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "776",
+    "year": "Sr",
+    "name": "Michael Imariagbe",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "PF/C",
+    "seasonPPG": 11.8,
+    "id": 35,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "779",
+    "year": "Sr",
     "name": "Dante Harris",
     "school": "Tennessee St.",
-    "position": "Scoring PG",
     "conf": "OVC",
-    "year": "Sr",
+    "position": "Scoring PG",
     "seasonPPG": 11.7,
-    "id": 14
+    "id": 36,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "780",
+    "year": "Jr",
+    "name": "Leon Bond III",
+    "school": "Northern Iowa",
+    "conf": "MVC",
+    "position": "Wing G",
+    "seasonPPG": 11.7,
+    "id": 37,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "791",
+    "year": "So",
+    "name": "TJ Burch",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "Pure PG",
+    "seasonPPG": 11.7,
+    "id": 38,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "808",
+    "year": "Jr",
     "name": "Avantae Parker",
     "school": "Queens",
-    "position": "PF/C",
     "conf": "ASun",
-    "year": "Jr",
-    "seasonPPG": 11.3,
-    "id": 15
+    "position": "PF/C",
+    "seasonPPG": 11.6,
+    "id": 39,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "841",
+    "year": "Fr",
+    "name": "Jordan Watford",
+    "school": "Queens",
+    "conf": "ASun",
+    "position": "Pure PG",
+    "seasonPPG": 11.5,
+    "id": 40,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "874",
+    "year": "Sr",
+    "name": "Javohn Garcia",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Combo G",
+    "seasonPPG": 11.3,
+    "id": 41,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "902",
+    "year": "So",
     "name": "Will Hornseth",
     "school": "Northern Iowa",
-    "position": "Wing F",
     "conf": "MVC",
-    "year": "So",
-    "seasonPPG": 11.2,
-    "id": 16
-  },
-  {
-    "name": "Carson Schwieger",
-    "school": "Queens",
     "position": "Wing F",
-    "conf": "ASun",
-    "year": "So",
-    "seasonPPG": 10.2,
-    "id": 17
+    "seasonPPG": 11.2,
+    "id": 42,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "909",
+    "year": "Sr",
+    "name": "Chris Ashby",
+    "school": "Queens",
+    "conf": "ASun",
+    "position": "Combo G",
+    "seasonPPG": 11.1,
+    "id": 43,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "919",
+    "year": "Sr",
+    "name": "Tyon Grant-Foster",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "PF/C",
+    "seasonPPG": 11.1,
+    "id": 44,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "965",
+    "year": "Fr",
+    "name": "Francis Folefac",
+    "school": "Siena",
+    "conf": "MAAC",
+    "position": "Wing F",
+    "seasonPPG": 10.8,
+    "id": 45,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1039",
+    "year": "So",
+    "name": "Edouard Benoit",
+    "school": "Lehigh",
+    "conf": "Pat",
+    "position": "Stretch 4",
+    "seasonPPG": 10.5,
+    "id": 46,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1042",
+    "year": "So",
+    "name": "Treyson Anderson",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "PF/C",
+    "seasonPPG": 10.5,
+    "id": 47,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1070",
+    "year": "Jr",
+    "name": "Joshua Ingram",
+    "school": "Lehigh",
+    "conf": "Pat",
+    "position": "Combo G",
+    "seasonPPG": 10.4,
+    "id": 48,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1080",
+    "year": "So",
+    "name": "Solomon Callaghan",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "Combo G",
+    "seasonPPG": 10.3,
+    "id": 49,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1089",
+    "year": "Jr",
     "name": "Jomo Goings",
     "school": "LIU",
-    "position": "Wing G",
     "conf": "NEC",
-    "year": "Jr",
+    "position": "Wing G",
+    "seasonPPG": 10.3,
+    "id": 50,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1101",
+    "year": "So",
+    "name": "Carson Schwieger",
+    "school": "Queens",
+    "conf": "ASun",
+    "position": "Stretch 4",
     "seasonPPG": 10.2,
-    "id": 18
+    "id": 51,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
-    "name": "Ben Schwieger",
-    "school": "Northern Iowa",
-    "position": "Wing F",
-    "conf": "MVC",
+    "rank": "1118",
     "year": "Sr",
-    "seasonPPG": 9.9,
-    "id": 19
+    "name": "Charles Johnston",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "PF/C",
+    "seasonPPG": 10.1,
+    "id": 52,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
-    "name": "Antoine Lorick III",
-    "school": "Tennessee St.",
-    "position": "PF/C",
-    "conf": "OVC",
+    "rank": "1140",
     "year": "Jr",
-    "seasonPPG": 9.5,
-    "id": 20
-  },
-  {
-    "name": "Owen Aquino",
-    "school": "High Point",
-    "position": "PF/C",
-    "conf": "BSth",
-    "year": "Sr",
-    "seasonPPG": 9.4,
-    "id": 21
-  },
-  {
     "name": "Conrad Martinez",
     "school": "High Point",
-    "position": "Scoring PG",
     "conf": "BSth",
-    "year": "Jr",
-    "seasonPPG": 9.3,
-    "id": 22
+    "position": "Scoring PG",
+    "seasonPPG": 10.0,
+    "id": 53,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1206",
+    "year": "Sr",
+    "name": "Ben Schwieger",
+    "school": "Northern Iowa",
+    "conf": "MVC",
+    "position": "Wing F",
+    "seasonPPG": 9.7,
+    "id": 54,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1247",
+    "year": "Sr",
+    "name": "Biggie Patterson",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "Wing F",
+    "seasonPPG": 9.5,
+    "id": 55,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1252",
+    "year": "Sr",
+    "name": "Owen Aquino",
+    "school": "High Point",
+    "conf": "BSth",
+    "position": "PF/C",
+    "seasonPPG": 9.5,
+    "id": 56,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1271",
+    "year": "So",
+    "name": "Andy Stefonowicz",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "Scoring PG",
+    "seasonPPG": 9.4,
+    "id": 57,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1301",
+    "year": "Jr",
+    "name": "Noah Feddersen",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "PF/C",
+    "seasonPPG": 9.3,
+    "id": 58,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1313",
+    "year": "So",
+    "name": "Dominic Pangonis",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "Wing G",
+    "seasonPPG": 9.2,
+    "id": 59,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1328",
+    "year": "Sr",
+    "name": "German Plotnikov",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "Wing G",
+    "seasonPPG": 9.1,
+    "id": 60,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1338",
+    "year": "Jr",
+    "name": "Antoine Lorick III",
+    "school": "Tennessee St.",
+    "conf": "OVC",
+    "position": "PF/C",
+    "seasonPPG": 9.1,
+    "id": 61,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1352",
+    "year": "Sr",
+    "name": "Cobi Campbell",
+    "school": "Troy",
+    "conf": "SB",
+    "position": "Combo G",
+    "seasonPPG": 9.0,
+    "id": 62,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1467",
+    "year": "Sr",
+    "name": "DJ Richards",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Combo G",
+    "seasonPPG": 8.4,
+    "id": 63,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1470",
+    "year": "Fr",
+    "name": "Mario Saint-Supery",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "Scoring PG",
+    "seasonPPG": 8.4,
+    "id": 64,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1519",
+    "year": "Sr",
+    "name": "Brody Rowbury",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "PF/C",
+    "seasonPPG": 8.2,
+    "id": 65,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1520",
+    "year": "Jr",
+    "name": "Garwey Dual",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Scoring PG",
+    "seasonPPG": 8.2,
+    "id": 66,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1530",
+    "year": "Sr",
     "name": "Scotty Washington",
     "school": "High Point",
-    "position": "Wing G",
     "conf": "BSth",
-    "year": "Sr",
-    "seasonPPG": 8.7,
-    "id": 23
+    "position": "Wing G",
+    "seasonPPG": 8.2,
+    "id": 67,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1570",
+    "year": "Sr",
+    "name": "Brendan Coyle",
+    "school": "Siena",
+    "conf": "MAAC",
+    "position": "Stretch 4",
+    "seasonPPG": 8.0,
+    "id": 68,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1577",
+    "year": "Fr",
+    "name": "Kellen Pickett",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "PF/C",
+    "seasonPPG": 8.0,
+    "id": 69,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1624",
+    "year": "Sr",
+    "name": "Adam Miller",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "Combo G",
+    "seasonPPG": 7.8,
+    "id": 70,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1637",
+    "year": "Sr",
+    "name": "Tom House",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "Wing G",
+    "seasonPPG": 7.7,
+    "id": 71,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1641",
+    "year": "Sr",
+    "name": "Ben Vander Wal",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "Wing F",
+    "seasonPPG": 7.7,
+    "id": 72,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1666",
+    "year": "Sr",
+    "name": "Tay Smith",
+    "school": "North Dakota St.",
+    "conf": "Sum",
+    "position": "Combo G",
+    "seasonPPG": 7.6,
+    "id": 73,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1670",
+    "year": "So",
     "name": "Maban Jabriel",
     "school": "Queens",
-    "position": "Stretch 4",
     "conf": "ASun",
-    "year": "So",
-    "seasonPPG": 7.6,
-    "id": 24
+    "position": "Stretch 4",
+    "seasonPPG": 7.5,
+    "id": 74,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1710",
+    "year": "Sr",
+    "name": "Antonio Chandler",
+    "school": "Siena",
+    "conf": "MAAC",
+    "position": "PF/C",
+    "seasonPPG": 7.3,
+    "id": 75,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1733",
+    "year": "Jr",
     "name": "Mason Porter-Brown",
     "school": "LIU",
-    "position": "Wing G",
     "conf": "NEC",
-    "year": "Jr",
-    "seasonPPG": 7.4,
-    "id": 25
+    "position": "Wing F",
+    "seasonPPG": 7.2,
+    "id": 76,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1759",
+    "year": "Sr",
+    "name": "Jalen Warley",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "Wing G",
+    "seasonPPG": 7.1,
+    "id": 77,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1787",
+    "year": "So",
     "name": "Braden Hausen",
     "school": "High Point",
-    "position": "Wing G",
     "conf": "BSth",
-    "year": "So",
-    "seasonPPG": 6.8,
-    "id": 26
+    "position": "Wing G",
+    "seasonPPG": 6.9,
+    "id": 78,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1830",
+    "year": "Jr",
+    "name": "Jack Payne",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "Stretch 4",
+    "seasonPPG": 6.7,
+    "id": 79,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1856",
+    "year": "Jr",
     "name": "Jalen Pitre",
     "school": "Tennessee St.",
-    "position": "PF/C",
     "conf": "OVC",
-    "year": "Jr",
-    "seasonPPG": 6.5,
-    "id": 27
+    "position": "Wing F",
+    "seasonPPG": 6.6,
+    "id": 80,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1865",
+    "year": "So",
+    "name": "Joshua DeCady",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "Wing F",
+    "seasonPPG": 6.5,
+    "id": 81,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1885",
+    "year": "Sr",
     "name": "Max Weisbrod",
     "school": "Northern Iowa",
-    "position": "Combo G",
     "conf": "MVC",
-    "year": "Sr",
-    "seasonPPG": 6.5,
-    "id": 28
+    "position": "Combo G",
+    "seasonPPG": 6.4,
+    "id": 82,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   },
   {
+    "rank": "1934",
+    "year": "Sr",
+    "name": "Jerrell Colbert",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "C",
+    "seasonPPG": 6.1,
+    "id": 83,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "1947",
+    "year": "Jr",
+    "name": "Emmanuel Innocenti",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "Wing G",
+    "seasonPPG": 6.0,
+    "id": 84,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2034",
+    "year": "So",
+    "name": "Jacolb Fredson-Cole",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Wing G",
+    "seasonPPG": 5.6,
+    "id": 85,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2048",
+    "year": "Jr",
+    "name": "Seth Joba",
+    "school": "Idaho",
+    "conf": "BSky",
+    "position": "PF/C",
+    "seasonPPG": 5.5,
+    "id": 86,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2055",
+    "year": "Sr",
     "name": "Carlous Williams",
     "school": "Tennessee St.",
-    "position": "Wing F",
     "conf": "OVC",
+    "position": "Wing F",
+    "seasonPPG": 5.5,
+    "id": 87,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2061",
+    "year": "Jr",
+    "name": "Braeden Smith",
+    "school": "Gonzaga",
+    "conf": "WCC",
+    "position": "Pure PG",
+    "seasonPPG": 5.5,
+    "id": 88,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2062",
+    "year": "Jr",
+    "name": "Logan Woods",
+    "school": "Wright St.",
+    "conf": "Horz",
+    "position": "Wing G",
+    "seasonPPG": 5.5,
+    "id": 89,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2066",
+    "year": "So",
+    "name": "Eddrin Bronson",
+    "school": "Furman",
+    "conf": "SC",
+    "position": "Wing G",
+    "seasonPPG": 5.4,
+    "id": 90,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2107",
     "year": "Sr",
-    "seasonPPG": 5.7,
-    "id": 29
+    "name": "Silas Sunday",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "C",
+    "seasonPPG": 5.1,
+    "id": 91,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2132",
+    "year": "Fr",
+    "name": "Victory Onuetu",
+    "school": "Hofstra",
+    "conf": "CAA",
+    "position": "C",
+    "seasonPPG": 5.0,
+    "id": 92,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2144",
+    "year": "Fr",
+    "name": "Christian Jones",
+    "school": "Siena",
+    "conf": "MAAC",
+    "position": "Scoring PG",
+    "seasonPPG": 4.9,
+    "id": 93,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2150",
+    "year": "So",
+    "name": "Shadrak Lasu",
+    "school": "LIU",
+    "conf": "NEC",
+    "position": "PF/C",
+    "seasonPPG": 4.8,
+    "id": 94,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2181",
+    "year": "Jr",
+    "name": "Carl Cherenfant",
+    "school": "McNeese St.",
+    "conf": "Slnd",
+    "position": "Wing G",
+    "seasonPPG": 4.5,
+    "id": 95,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2191",
+    "year": "So",
+    "name": "Peter Kramer",
+    "school": "Lehigh",
+    "conf": "Pat",
+    "position": "Wing G",
+    "seasonPPG": 4.5,
+    "id": 96,
+    "seed": "",
+    "region": "",
+    "opponent": ""
+  },
+  {
+    "rank": "2240",
+    "year": "Jr",
+    "name": "Jalen Vazquez",
+    "school": "Lehigh",
+    "conf": "Pat",
+    "position": "Combo G",
+    "seasonPPG": 4.0,
+    "id": 97,
+    "seed": "",
+    "region": "",
+    "opponent": ""
   }
 ];
 
+    // Seed order: 1v16, 8v9, 5v12, 4v13, 6v11, 3v14, 7v10, 2v15
+    // Using sample tournament teams - will be updated after Selection Sunday
     const BRACKET_DATA = {
-      east: {
-        round1: [
-          { seed: 1, team: "Queens", vs: 16 },
-          { seed: 8, team: "", vs: 9 },
-          { seed: 5, team: "", vs: 12 },
-          { seed: 4, team: "", vs: 13 },
-          { seed: 6, team: "", vs: 11 },
-          { seed: 3, team: "", vs: 14 },
-          { seed: 7, team: "", vs: 10 },
-          { seed: 2, team: "High Point", vs: 15 }
-        ]
-      },
-      west: {
-        round1: [
-          { seed: 1, team: "Northern Iowa", vs: 16 },
-          { seed: 8, team: "", vs: 9 },
-          { seed: 5, team: "", vs: 12 },
-          { seed: 4, team: "", vs: 13 },
-          { seed: 6, team: "", vs: 11 },
-          { seed: 3, team: "", vs: 14 },
-          { seed: 7, team: "", vs: 10 },
-          { seed: 2, team: "", vs: 15 }
-        ]
-      },
-      south: {
-        round1: [
-          { seed: 1, team: "LIU", vs: 16 },
-          { seed: 8, team: "", vs: 9 },
-          { seed: 5, team: "", vs: 12 },
-          { seed: 4, team: "", vs: 13 },
-          { seed: 6, team: "", vs: 11 },
-          { seed: 3, team: "", vs: 14 },
-          { seed: 7, team: "", vs: 10 },
-          { seed: 2, team: "", vs: 15 }
-        ]
-      },
-      midwest: {
-        round1: [
-          { seed: 1, team: "Tennessee St.", vs: 16 },
-          { seed: 8, team: "", vs: 9 },
-          { seed: 5, team: "", vs: 12 },
-          { seed: 4, team: "", vs: 13 },
-          { seed: 6, team: "", vs: 11 },
-          { seed: 3, team: "", vs: 14 },
-          { seed: 7, team: "", vs: 10 },
-          { seed: 2, team: "", vs: 15 }
-        ]
-      }
+      east: [
+        { seed: 1, team: "Gonzaga" },
+        { seed: 16, team: "" },
+        { seed: 8, team: "" },
+        { seed: 9, team: "" },
+        { seed: 5, team: "" },
+        { seed: 12, team: "" },
+        { seed: 4, team: "" },
+        { seed: 13, team: "" },
+        { seed: 6, team: "" },
+        { seed: 11, team: "" },
+        { seed: 3, team: "" },
+        { seed: 14, team: "" },
+        { seed: 7, team: "" },
+        { seed: 10, team: "" },
+        { seed: 2, team: "High Point" },
+        { seed: 15, team: "" }
+      ],
+      west: [
+        { seed: 1, team: "Northern Iowa" },
+        { seed: 16, team: "" },
+        { seed: 8, team: "" },
+        { seed: 9, team: "" },
+        { seed: 5, team: "" },
+        { seed: 12, team: "" },
+        { seed: 4, team: "" },
+        { seed: 13, team: "" },
+        { seed: 6, team: "" },
+        { seed: 11, team: "" },
+        { seed: 3, team: "" },
+        { seed: 14, team: "" },
+        { seed: 7, team: "" },
+        { seed: 10, team: "" },
+        { seed: 2, team: "Hofstra" },
+        { seed: 15, team: "" }
+      ],
+      south: [
+        { seed: 1, team: "LIU" },
+        { seed: 16, team: "" },
+        { seed: 8, team: "" },
+        { seed: 9, team: "" },
+        { seed: 5, team: "" },
+        { seed: 12, team: "" },
+        { seed: 4, team: "" },
+        { seed: 13, team: "" },
+        { seed: 6, team: "" },
+        { seed: 11, team: "" },
+        { seed: 3, team: "" },
+        { seed: 14, team: "" },
+        { seed: 7, team: "" },
+        { seed: 10, team: "" },
+        { seed: 2, team: "Furman" },
+        { seed: 15, team: "" }
+      ],
+      midwest: [
+        { seed: 1, team: "Tennessee St." },
+        { seed: 16, team: "" },
+        { seed: 8, team: "" },
+        { seed: 9, team: "" },
+        { seed: 5, team: "" },
+        { seed: 12, team: "" },
+        { seed: 4, team: "" },
+        { seed: 13, team: "" },
+        { seed: 6, team: "" },
+        { seed: 11, team: "" },
+        { seed: 3, team: "" },
+        { seed: 14, team: "" },
+        { seed: 7, team: "" },
+        { seed: 10, team: "" },
+        { seed: 2, team: "Queens" },
+        { seed: 15, team: "" }
+      ]
     };
 
     function TeamModal({ team, draftedPlayers, onClose }) {
@@ -416,39 +1461,74 @@
       );
     }
 
-    function TeamSlot({ team, seed, onClick, className = "" }) {
+    function TeamSlot({ team, seed, onClick }) {
       return (
         <div 
-          className={`flex items-center border-2 border-gray-800 bg-white h-7 cursor-pointer hover:bg-gray-50 transition-colors ${className}`}
+          className="flex items-center border-2 border-gray-800 bg-white h-7 cursor-pointer hover:bg-gray-50 transition-colors"
           onClick={() => team && onClick(team)}
         >
-          <div className="w-8 bg-gray-800 text-white text-center text-xs font-bold h-full flex items-center justify-center">
+          <div className="w-7 bg-gray-800 text-white text-center text-xs font-bold h-full flex items-center justify-center flex-shrink-0">
             {seed || "—"}
           </div>
-          <div className="flex-1 px-2 text-sm font-semibold truncate">
+          <div className="flex-1 px-2 text-xs font-semibold truncate min-w-0">
             {team || ""}
           </div>
         </div>
       );
     }
 
-    function Matchup({ game1, game2, onTeamClick, showConnector = true }) {
-      return (
-        <div className={`relative ${showConnector ? 'matchup-connector' : ''}`}>
-          <TeamSlot team={game1.team} seed={game1.seed} onClick={onTeamClick} className="mb-px" />
-          <TeamSlot team={game2?.team || ""} seed={game2?.vs} onClick={onTeamClick} />
-        </div>
-      );
-    }
+    function RegionBracket({ teams, onTeamClick, reverse = false }) {
+      const pairs = [];
+      for (let i = 0; i < teams.length; i += 2) {
+        pairs.push([teams[i], teams[i + 1]]);
+      }
 
-    function Round({ games, onTeamClick, label, spacing = "gap-6" }) {
+      const r2Teams = [0, 2, 4, 6].map(i => ({}));
+      const r3Teams = [0, 2].map(i => ({}));
+      const r4Team = {};
+
       return (
-        <div className="flex flex-col">
-          <div className="text-xs font-bold text-gray-700 text-center mb-2 uppercase">{label}</div>
-          <div className={`flex flex-col ${spacing}`}>
-            {games.map((game, idx) => (
-              <Matchup key={idx} game1={game} onTeamClick={onTeamClick} />
+        <div className={"flex gap-0 " + (reverse ? "flex-row-reverse" : "")}>
+          <div className="flex flex-col justify-around">
+            {pairs.map((pair, idx) => (
+              <div key={idx} className="game-pair mb-8">
+                <div className="r1-connector">
+                  <TeamSlot team={pair[0].team} seed={pair[0].seed} onClick={onTeamClick} />
+                </div>
+                <div className="r1-connector mt-0.5">
+                  <TeamSlot team={pair[1].team} seed={pair[1].seed} onClick={onTeamClick} />
+                </div>
+                <div className="pair-line" style={{ top: '15px', height: '32px' }}></div>
+              </div>
             ))}
+          </div>
+
+          <div className="round-spacer"></div>
+
+          <div className="flex flex-col justify-around">
+            {r2Teams.map((team, idx) => (
+              <div key={idx} className="r1-connector" style={{ marginBottom: idx < 3 ? '100px' : '0' }}>
+                <TeamSlot team={team.team} seed={team.seed} onClick={onTeamClick} />
+              </div>
+            ))}
+          </div>
+
+          <div className="round-spacer"></div>
+
+          <div className="flex flex-col justify-around">
+            {r3Teams.map((team, idx) => (
+              <div key={idx} className="r1-connector" style={{ marginBottom: idx < 1 ? '232px' : '0' }}>
+                <TeamSlot team={team.team} seed={team.seed} onClick={onTeamClick} />
+              </div>
+            ))}
+          </div>
+
+          <div className="round-spacer"></div>
+
+          <div className="flex flex-col justify-center">
+            <div className="r1-connector">
+              <TeamSlot team={r4Team.team} seed={r4Team.seed} onClick={onTeamClick} />
+            </div>
           </div>
         </div>
       );
@@ -458,7 +1538,6 @@
       const [selectedTeam, setSelectedTeam] = useState(null);
       const [draftedPlayers, setDraftedPlayers] = useState(new Set());
 
-      // Sync with draft app via localStorage
       useEffect(() => {
         const syncDrafts = () => {
           try {
@@ -476,126 +1555,105 @@
 
       return (
         <div className="min-h-screen bg-white">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-red-600 via-blue-800 to-red-600 text-white py-4 px-6">
+          <div className="bg-gradient-to-r from-red-600 via-blue-800 to-red-600 text-white py-3 px-6">
             <div className="text-center">
-              <h1 className="text-3xl font-black tracking-tight">2026 NCAA DIVISION I MEN'S BASKETBALL CHAMPIONSHIP</h1>
+              <h1 className="text-2xl font-black tracking-tight">2026 NCAA DIVISION I MEN'S BASKETBALL CHAMPIONSHIP</h1>
             </div>
           </div>
 
-          {/* Round Labels */}
-          <div className="bg-gray-100 border-y-2 border-gray-300 py-2 px-6">
-            <div className="flex justify-between text-xs font-bold text-gray-700 max-w-[1600px] mx-auto">
-              <div className="flex gap-12">
-                <span>FIRST ROUND<br/>MARCH 18-20</span>
-                <span>SECOND ROUND<br/>MARCH 21-22</span>
-                <span>SWEET 16<br/>MARCH 26-27</span>
-                <span>ELITE 8<br/>MARCH 28-29</span>
+          <div className="bg-gray-100 border-b-2 border-gray-300 py-2 px-6">
+            <div className="flex justify-between text-[10px] font-bold text-gray-700 max-w-[1800px] mx-auto">
+              <div className="flex gap-8">
+                <span className="w-20">FIRST ROUND<br/>MARCH 18-20</span>
+                <span className="w-20">SECOND ROUND<br/>MARCH 21-22</span>
+                <span className="w-20">SWEET 16<br/>MARCH 26-27</span>
+                <span className="w-20">ELITE 8<br/>MARCH 28-29</span>
               </div>
               <div className="text-center">
-                <span>NATIONAL SEMIFINALS<br/>APRIL 4</span>
+                <span>NATIONAL SEMIFINALS • APRIL 4</span>
               </div>
-              <div className="flex gap-12">
-                <span className="text-right">ELITE 8<br/>MARCH 28-29</span>
-                <span className="text-right">SWEET 16<br/>MARCH 26-27</span>
-                <span className="text-right">SECOND ROUND<br/>MARCH 21-22</span>
-                <span className="text-right">FIRST ROUND<br/>MARCH 18-20</span>
+              <div className="flex gap-8">
+                <span className="w-20 text-right">ELITE 8<br/>MARCH 28-29</span>
+                <span className="w-20 text-right">SWEET 16<br/>MARCH 26-27</span>
+                <span className="w-20 text-right">SECOND ROUND<br/>MARCH 21-22</span>
+                <span className="w-20 text-right">FIRST ROUND<br/>MARCH 18-20</span>
               </div>
             </div>
           </div>
 
-          {/* Main Bracket */}
-          <div className="p-8 overflow-x-auto">
-            <div className="min-w-[1400px] max-w-[1600px] mx-auto">
-              
-              {/* Top Half - East & West */}
-              <div className="flex justify-between gap-8 mb-16">
-                {/* East Region */}
-                <div className="flex gap-4">
-                  <div className="text-right pr-4 font-bold text-sm text-gray-700 flex items-center">EAST</div>
-                  <Round games={BRACKET_DATA.east.round1} onTeamClick={setSelectedTeam} label="First Round" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.east.round1[0], BRACKET_DATA.east.round1[2], BRACKET_DATA.east.round1[4], BRACKET_DATA.east.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.east.round1[0], BRACKET_DATA.east.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.east.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
-                </div>
+          <div className="bg-blue-900 text-white py-2 text-center">
+            <div className="flex justify-center items-center gap-8 text-sm font-bold">
+              <div className="w-32 border-2 border-white h-8 flex items-center justify-center"></div>
+              <div className="w-32 border-2 border-white h-8 flex items-center justify-center"></div>
+              <div className="px-4">DAYTON<br/><span className="text-xs">MARCH 17-18</span></div>
+              <div className="w-32 border-2 border-white h-8 flex items-center justify-center"></div>
+              <div className="w-32 border-2 border-white h-8 flex items-center justify-center"></div>
+            </div>
+          </div>
 
-                {/* West Region */}
-                <div className="flex gap-4 flex-row-reverse">
-                  <div className="text-left pl-4 font-bold text-sm text-gray-700 flex items-center">WEST</div>
-                  <Round games={BRACKET_DATA.west.round1} onTeamClick={setSelectedTeam} label="First Round" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.west.round1[0], BRACKET_DATA.west.round1[2], BRACKET_DATA.west.round1[4], BRACKET_DATA.west.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.west.round1[0], BRACKET_DATA.west.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.west.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
-                </div>
+          <div className="p-8 overflow-x-auto">
+            <div className="min-w-[1600px] max-w-[1800px] mx-auto">
+              
+              <div className="flex justify-between items-start mb-16">
+                <RegionBracket teams={BRACKET_DATA.east} onTeamClick={setSelectedTeam} />
+                <RegionBracket teams={BRACKET_DATA.west} onTeamClick={setSelectedTeam} reverse={true} />
               </div>
 
-              {/* Final Four */}
-              <div className="relative my-16">
+              <div className="relative flex justify-center items-center my-20">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-gradient-to-r from-blue-800 to-blue-900 text-white px-16 py-12 rounded-lg shadow-2xl text-center">
-                    <div className="mb-4">
-                      <svg className="w-32 h-32 mx-auto text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                      </svg>
+                  <div className="text-center">
+                    <svg className="w-48 h-48 mx-auto mb-4" viewBox="0 0 200 200">
+                      <circle cx="100" cy="100" r="90" fill="#003366" stroke="#CC0000" strokeWidth="8"/>
+                      <text x="100" y="80" textAnchor="middle" fill="white" fontSize="32" fontWeight="bold">FINAL</text>
+                      <text x="100" y="115" textAnchor="middle" fill="white" fontSize="32" fontWeight="bold">FOUR</text>
+                      <text x="100" y="140" textAnchor="middle" fill="#FFD700" fontSize="16" fontWeight="bold">INDIANAPOLIS</text>
+                    </svg>
+                  </div>
+                </div>
+
+                <div className="flex gap-64 items-center z-10">
+                  <div className="flex flex-col gap-8">
+                    <div className="bg-blue-900 text-white px-4 py-1 text-xs font-bold text-center">SEMIFINALS</div>
+                    <div className="w-48">
+                      <TeamSlot team={""} seed={""} onClick={setSelectedTeam} />
                     </div>
-                    <div className="text-4xl font-black mb-2">FINAL FOUR</div>
-                    <div className="text-sm font-semibold mb-4 opacity-90">INDIANAPOLIS</div>
-                    <div className="flex gap-8 justify-center mb-8">
-                      <div className="w-48">
-                        <div className="text-xs font-bold mb-2">SEMIFINALS</div>
-                        <TeamSlot team={""} seed={""} onClick={setSelectedTeam} className="mb-2" />
-                        <TeamSlot team={""} seed={""} onClick={setSelectedTeam} />
-                      </div>
-                    </div>
-                    <div className="border-t-2 border-white/30 pt-6 mt-6">
-                      <div className="text-sm font-bold mb-2 uppercase">National Championship • April 6</div>
-                      <div className="w-64 mx-auto">
-                        <TeamSlot team={""} seed={""} onClick={setSelectedTeam} className="ring-4 ring-yellow-400" />
-                      </div>
+                  </div>
+
+                  <div className="w-64"></div>
+
+                  <div className="flex flex-col gap-8">
+                    <div className="bg-blue-900 text-white px-4 py-1 text-xs font-bold text-center">SEMIFINALS</div>
+                    <div className="w-48">
+                      <TeamSlot team={""} seed={""} onClick={setSelectedTeam} />
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Half - South & Midwest */}
-              <div className="flex justify-between gap-8 mt-16">
-                {/* South Region */}
-                <div className="flex gap-4">
-                  <div className="text-right pr-4 font-bold text-sm text-gray-700 flex items-center">SOUTH</div>
-                  <Round games={BRACKET_DATA.south.round1} onTeamClick={setSelectedTeam} label="First Round" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.south.round1[0], BRACKET_DATA.south.round1[2], BRACKET_DATA.south.round1[4], BRACKET_DATA.south.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.south.round1[0], BRACKET_DATA.south.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.south.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
+              <div className="flex justify-center mb-16">
+                <div className="text-center">
+                  <div className="bg-blue-900 text-white px-6 py-2 text-sm font-bold mb-4">
+                    NATIONAL CHAMPIONSHIP • APRIL 6
+                  </div>
+                  <div className="w-64">
+                    <TeamSlot team={""} seed={""} onClick={setSelectedTeam} />
+                  </div>
+                  <div className="flex justify-center gap-4 mt-4">
+                    <div className="text-2xl font-black text-[#009CDE]">⚡ POTTER CUP ⚡</div>
+                  </div>
                 </div>
+              </div>
 
-                {/* Midwest Region */}
-                <div className="flex gap-4 flex-row-reverse">
-                  <div className="text-left pl-4 font-bold text-sm text-gray-700 flex items-center">MIDWEST</div>
-                  <Round games={BRACKET_DATA.midwest.round1} onTeamClick={setSelectedTeam} label="First Round" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.midwest.round1[0], BRACKET_DATA.midwest.round1[2], BRACKET_DATA.midwest.round1[4], BRACKET_DATA.midwest.round1[6]]} onTeamClick={setSelectedTeam} label="Second Round" spacing="gap-14" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.midwest.round1[0], BRACKET_DATA.midwest.round1[4]]} onTeamClick={setSelectedTeam} label="Sweet 16" spacing="gap-32" />
-                  <div className="w-px bg-gray-300"></div>
-                  <Round games={[BRACKET_DATA.midwest.round1[0]]} onTeamClick={setSelectedTeam} label="Elite 8" spacing="gap-64" />
-                </div>
+              <div className="flex justify-between items-start">
+                <RegionBracket teams={BRACKET_DATA.south} onTeamClick={setSelectedTeam} />
+                <RegionBracket teams={BRACKET_DATA.midwest} onTeamClick={setSelectedTeam} reverse={true} />
               </div>
 
             </div>
           </div>
 
-          {/* Potter Cup Logo Footer */}
-          <div className="bg-gray-100 border-t-2 border-gray-300 py-8 text-center">
-            <div className="text-4xl font-black text-[#009CDE] mb-2">⚡ POTTER CUP ⚡</div>
+          <div className="bg-gray-100 border-t-2 border-gray-300 py-6 text-center">
+            <div className="text-3xl font-black text-[#009CDE] mb-2">⚡ POTTER CUP ⚡</div>
             <div className="text-sm text-gray-600">Click any team name to view available players</div>
           </div>
 
