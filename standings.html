@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Potter Cup Live Standings | 2026 NCAA Tournament</title>
+  <title>Potter Cup - Live Standings</title>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -13,9 +13,9 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useMemo, useEffect } = React;
 
-    const ALL_PLAYERS = [
+    const PLAYERS_DATA = [
   {
     "rank": "1",
     "year": "Fr",
@@ -5205,85 +5205,115 @@
   }
 ];
     const TEAM_NAMES = ["Trey & Duck", "Will & Bill", "The Syndicate", "Stoeckle Brothers", "Fahrion Brothers", "Phil & AJ", "Tanner & Milldo", "Greg & Thomps", "Fish & EJ", "Clif & Jay L.", "Fahey & Page"];
+    const TOURNAMENT_ROUNDS = ['Round of 64', 'Round of 32', 'Sweet 16', 'Elite 8', 'Final Four', 'Championship'];
 
-    function LiveStandings() {
-      const [draftedPlayers, setDraftedPlayers] = useState({});
-      const [playerScores, setPlayerScores] = useState({});
-      const [eliminatedSchools, setEliminatedSchools] = useState(new Set());
-      const [loading, setLoading] = useState(false);
-      const [lastUpdate, setLastUpdate] = useState(null);
-      const [selectedTeam, setSelectedTeam] = useState(null);
-      const [adminMode, setAdminMode] = useState(false);
-      const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
-      const [showScoreAdjust, setShowScoreAdjust] = useState(null);
+    function PotterCupStandings() {
+      const [players] = useState(PLAYERS_DATA);
+      const [teams] = useState(TEAM_NAMES);
+      
+      const [playerScores, setPlayerScores] = useState(() => {
+        try {
+          const saved = localStorage.getItem('potterCupPlayerScores');
+          return saved ? JSON.parse(saved) : {};
+        } catch (e) {
+          return {};
+        }
+      });
 
-      // Load drafted players from localStorage
-      useEffect(() => {
+      const [eliminatedSchools, setEliminatedSchools] = useState(() => {
+        try {
+          const saved = localStorage.getItem('potterCupEliminatedSchools');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
+      const [draftState, setDraftState] = useState(() => {
         try {
           const saved = localStorage.getItem('potterCupDraftState');
-          if (saved) {
-            setDraftedPlayers(JSON.parse(saved));
-          }
+          return saved ? JSON.parse(saved) : {};
         } catch (e) {
-          console.error('Failed to load draft state:', e);
+          return {};
         }
+      });
 
-        // Load saved scores
-        try {
-          const savedScores = localStorage.getItem('potterCupPlayerScores');
-          if (savedScores) {
-            setPlayerScores(JSON.parse(savedScores));
-          }
-        } catch (e) {
-          console.error('Failed to load scores:', e);
-        }
-
-        // Load eliminated schools
-        try {
-          const savedEliminated = localStorage.getItem('potterCupEliminatedSchools');
-          if (savedEliminated) {
-            setEliminatedSchools(new Set(JSON.parse(savedEliminated)));
-          }
-        } catch (e) {
-          console.error('Failed to load eliminated schools:', e);
-        }
-
-        // Load last update time
+      const [lastUpdate, setLastUpdate] = useState(() => {
         try {
           const saved = localStorage.getItem('potterCupLastScoreUpdate');
-          if (saved) {
-            setLastUpdate(new Date(saved));
-          }
-        } catch (e) {}
-      }, []);
+          return saved || null;
+        } catch (e) {
+          return null;
+        }
+      });
 
-      // Auto-refresh every 5 minutes
+      const [adminMode, setAdminMode] = useState(false);
+      const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+      const [selectedTeam, setSelectedTeam] = useState(null);
+      const [editingPlayer, setEditingPlayer] = useState(null);
+      const [editValues, setEditValues] = useState({});
+
+      const uniqueSchools = useMemo(() => {
+        return [...new Set(players.map(p => p.school))].sort();
+      }, [players]);
+
       useEffect(() => {
         const interval = setInterval(() => {
-          if (!adminMode) {
-            fetchLatestScores();
+          try {
+            const saved = localStorage.getItem('potterCupPlayerScores');
+            if (saved) setPlayerScores(JSON.parse(saved));
+            
+            const savedElim = localStorage.getItem('potterCupEliminatedSchools');
+            if (savedElim) setEliminatedSchools(JSON.parse(savedElim));
+            
+            const savedUpdate = localStorage.getItem('potterCupLastScoreUpdate');
+            if (savedUpdate) setLastUpdate(savedUpdate);
+          } catch (e) {
+            console.error('Failed to sync standings:', e);
           }
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 5000);
 
         return () => clearInterval(interval);
-      }, [adminMode]);
+      }, []);
 
-      const fetchLatestScores = async () => {
-        setLoading(true);
-        try {
-          // This will use the fetch_sports_data tool
-          // For now, using placeholder data structure
-          console.log('Fetching NCAA tournament data...');
-          
-          // TODO: Integrate with actual API
-          // const response = await fetchNCAATournamentData();
-          
-          setLastUpdate(new Date());
-          localStorage.setItem('potterCupLastScoreUpdate', new Date().toISOString());
-        } catch (error) {
-          console.error('Failed to fetch scores:', error);
-        } finally {
-          setLoading(false);
+      const getPlayersByTeam = (team) => {
+        return Object.entries(draftState)
+          .filter(([_, draftedTeam]) => draftedTeam === team)
+          .map(([playerId, _]) => players.find(p => p.id === parseInt(playerId)))
+          .filter(Boolean);
+      };
+
+      const getPlayerTotalScore = (playerId) => {
+        const scores = playerScores[playerId] || {};
+        return Object.values(scores).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
+      };
+
+      const getTeamScore = (team) => {
+        const roster = getPlayersByTeam(team);
+        return roster.reduce((sum, player) => sum + getPlayerTotalScore(player.id), 0);
+      };
+
+      const getActivePlayersCount = (team) => {
+        const roster = getPlayersByTeam(team);
+        return roster.filter(player => !eliminatedSchools.includes(player.school)).length;
+      };
+
+      const leaderboard = useMemo(() => {
+        return teams
+          .map(team => ({
+            team,
+            score: getTeamScore(team),
+            activePlayers: getActivePlayersCount(team),
+            totalPlayers: getPlayersByTeam(team).length
+          }))
+          .sort((a, b) => b.score - a.score);
+      }, [teams, playerScores, draftState, eliminatedSchools]);
+
+      const handleAdminToggle = () => {
+        if (!adminMode) {
+          setShowPasswordPrompt(true);
+        } else {
+          setAdminMode(false);
         }
       };
 
@@ -5299,86 +5329,83 @@
         e.target.password.value = '';
       };
 
-      const handleScoreAdjustment = (playerId, newScore) => {
-        const updated = { ...playerScores, [playerId]: parseFloat(newScore) || 0 };
-        setPlayerScores(updated);
-        localStorage.setItem('potterCupPlayerScores', JSON.stringify(updated));
-        setShowScoreAdjust(null);
-      };
-
       const handleToggleEliminated = (school) => {
-        const updated = new Set(eliminatedSchools);
-        if (updated.has(school)) {
-          updated.delete(school);
-        } else {
-          updated.add(school);
+        const newEliminated = eliminatedSchools.includes(school)
+          ? eliminatedSchools.filter(s => s !== school)
+          : [...eliminatedSchools, school];
+        
+        setEliminatedSchools(newEliminated);
+        
+        try {
+          localStorage.setItem('potterCupEliminatedSchools', JSON.stringify(newEliminated));
+        } catch (e) {
+          console.error('Failed to save eliminated schools:', e);
         }
-        setEliminatedSchools(updated);
-        localStorage.setItem('potterCupEliminatedSchools', JSON.stringify([...updated]));
       };
 
-      // Calculate team standings
-      const standings = useMemo(() => {
-        const teamScores = {};
-        const teamPlayers = {};
-        const teamActivePlayers = {};
-
-        TEAM_NAMES.forEach(team => {
-          teamScores[team] = 0;
-          teamPlayers[team] = [];
-          teamActivePlayers[team] = 0;
+      const handleEditPlayer = (player) => {
+        setEditingPlayer(player.id);
+        const currentScores = playerScores[player.id] || {};
+        setEditValues({
+          'Round of 64': currentScores['Round of 64'] || '',
+          'Round of 32': currentScores['Round of 32'] || '',
+          'Sweet 16': currentScores['Sweet 16'] || '',
+          'Elite 8': currentScores['Elite 8'] || '',
+          'Final Four': currentScores['Final Four'] || '',
+          'Championship': currentScores['Championship'] || ''
         });
+      };
 
-        Object.entries(draftedPlayers).forEach(([playerId, team]) => {
-          const player = ALL_PLAYERS.find(p => p.id === parseInt(playerId));
-          if (player) {
-            const score = playerScores[playerId] || 0;
-            teamScores[team] += score;
-            teamPlayers[team].push({ ...player, tournamentScore: score });
-            
-            if (!eliminatedSchools.has(player.school)) {
-              teamActivePlayers[team]++;
-            }
-          }
-        });
+      const handleSavePlayer = (playerId) => {
+        const newScores = { ...playerScores };
+        newScores[playerId] = { ...editValues };
+        
+        setPlayerScores(newScores);
+        setEditingPlayer(null);
+        setEditValues({});
+        
+        const timestamp = new Date().toLocaleString();
+        setLastUpdate(timestamp);
+        
+        try {
+          localStorage.setItem('potterCupPlayerScores', JSON.stringify(newScores));
+          localStorage.setItem('potterCupLastScoreUpdate', timestamp);
+        } catch (e) {
+          console.error('Failed to save player scores:', e);
+        }
+      };
 
-        return TEAM_NAMES.map(team => ({
-          name: team,
-          totalScore: teamScores[team],
-          players: teamPlayers[team].sort((a, b) => b.tournamentScore - a.tournamentScore),
-          activePlayers: teamActivePlayers[team]
-        })).sort((a, b) => b.totalScore - a.totalScore);
-      }, [draftedPlayers, playerScores, eliminatedSchools]);
+      const isPlayerEliminated = (player) => {
+        return eliminatedSchools.includes(player.school);
+      };
+
+      const getRoundScore = (playerId, round) => {
+        const scores = playerScores[playerId] || {};
+        return scores[round] || 0;
+      };
 
       return (
         <div className="min-h-screen bg-gray-50">
-          {/* Header */}
-          <header className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white shadow-lg sticky top-0 z-40">
-            <div className="max-w-7xl mx-auto px-4 py-4">
+          <header className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white shadow-lg">
+            <div className="max-w-7xl mx-auto px-4 py-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h1 className="text-3xl font-bold">🏆 Potter Cup Live Standings</h1>
-                  <p className="text-[#E6F7FF] text-sm mt-1">
-                    2026 NCAA Tournament • Updated {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Never'}
-                  </p>
+                  <p className="text-[#E6F7FF] mt-1">2026 NCAA Tournament</p>
+                  {lastUpdate && (
+                    <p className="text-xs text-[#E6F7FF] mt-1">Last updated: {lastUpdate}</p>
+                  )}
                 </div>
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setAdminMode(!adminMode) || setShowPasswordPrompt(true)}
+                    onClick={handleAdminToggle}
                     className={"px-4 py-2 rounded-lg font-semibold transition-colors " + (adminMode ? "bg-yellow-400 text-gray-900" : "bg-white/20 text-white hover:bg-white/30")}
                   >
                     {adminMode ? "🔓 Admin Mode" : "🔒 Admin"}
                   </button>
-                  <button
-                    onClick={fetchLatestScores}
-                    disabled={loading}
-                    className="bg-white text-[#009CDE] px-4 py-2 rounded-lg font-semibold hover:bg-[#E6F7FF] transition-colors disabled:opacity-50"
-                  >
-                    {loading ? '⏳ Updating...' : '🔄 Refresh Scores'}
-                  </button>
                   <a 
-                    href="index.html"
-                    className="bg-white/20 text-white px-4 py-2 rounded-lg font-semibold hover:bg-white/30 transition-colors"
+                    href="potter-cup.html"
+                    className="bg-white text-[#009CDE] px-4 py-2 rounded-lg font-semibold hover:bg-[#E6F7FF] transition-colors"
                   >
                     ← Back to Draft
                   </a>
@@ -5403,7 +5430,11 @@
                     <button type="submit" className="flex-1 bg-[#009CDE] text-white px-4 py-2 rounded hover:bg-[#0077C8]">
                       Login
                     </button>
-                    <button type="button" onClick={() => setShowPasswordPrompt(false)} className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordPrompt(false)}
+                      className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                    >
                       Cancel
                     </button>
                   </div>
@@ -5412,12 +5443,141 @@
             </div>
           )}
 
-          {/* Main Content */}
-          <div className="max-w-7xl mx-auto px-4 py-6">
-            {/* Leaderboard */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-              <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white px-6 py-4">
-                <h2 className="text-2xl font-bold">Leaderboard</h2>
+          {selectedTeam && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">{selectedTeam}</h2>
+                    <p className="text-sm text-gray-600 mt-1">Tournament Round-by-Round Scoring</p>
+                  </div>
+                  <button
+                    onClick={() => { setSelectedTeam(null); setEditingPlayer(null); }}
+                    className="text-gray-500 hover:text-gray-700 text-3xl leading-none"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="overflow-auto flex-1 p-6">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="border px-3 py-2 text-left font-semibold">Player</th>
+                        <th className="border px-3 py-2 text-center font-semibold text-xs">R64</th>
+                        <th className="border px-3 py-2 text-center font-semibold text-xs">R32</th>
+                        <th className="border px-3 py-2 text-center font-semibold text-xs">S16</th>
+                        <th className="border px-3 py-2 text-center font-semibold text-xs">E8</th>
+                        <th className="border px-3 py-2 text-center font-semibold text-xs">FF</th>
+                        <th className="border px-3 py-2 text-center font-semibold text-xs">Final</th>
+                        <th className="border px-3 py-2 text-center font-semibold bg-blue-50">Total</th>
+                        {adminMode && <th className="border px-3 py-2 text-center font-semibold">Action</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getPlayersByTeam(selectedTeam).map(player => {
+                        const isEliminated = isPlayerEliminated(player);
+                        const isEditing = editingPlayer === player.id;
+                        const total = getPlayerTotalScore(player.id);
+
+                        return (
+                          <tr key={player.id} className={isEliminated ? "bg-red-50" : "hover:bg-blue-50"}>
+                            <td className="border px-3 py-2">
+                              <div className="font-medium">{player.name}</div>
+                              <div className="text-xs text-gray-600">{player.school}</div>
+                            </td>
+                            {TOURNAMENT_ROUNDS.map(round => {
+                              const score = getRoundScore(player.id, round);
+                              const shouldShowX = isEliminated;
+                              
+                              if (isEditing) {
+                                return (
+                                  <td key={round} className="border px-2 py-1 text-center">
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      value={editValues[round] || ''}
+                                      onChange={(e) => setEditValues(prev => ({ ...prev, [round]: e.target.value }))}
+                                      className="w-16 px-2 py-1 border rounded text-center text-sm"
+                                      placeholder="0"
+                                    />
+                                  </td>
+                                );
+                              }
+                              
+                              return (
+                                <td key={round} className="border px-3 py-2 text-center">
+                                  {shouldShowX && score === 0 ? (
+                                    <span className="text-red-500 font-bold">❌</span>
+                                  ) : (
+                                    <span className={score > 0 ? "font-semibold text-[#009CDE]" : "text-gray-400"}>
+                                      {score || '—'}
+                                    </span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            <td className="border px-3 py-2 text-center font-bold text-lg bg-blue-50">
+                              {total || 0}
+                            </td>
+                            {adminMode && (
+                              <td className="border px-3 py-2 text-center">
+                                {isEditing ? (
+                                  <div className="flex gap-1 justify-center">
+                                    <button
+                                      onClick={() => handleSavePlayer(player.id)}
+                                      className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => { setEditingPlayer(null); setEditValues({}) }}
+                                      className="px-2 py-1 bg-gray-400 text-white text-xs rounded hover:bg-gray-500"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleEditPlayer(player)}
+                                    className="px-3 py-1 bg-[#009CDE] text-white text-xs rounded hover:bg-[#0077C8]"
+                                  >
+                                    Edit
+                                  </button>
+                                )}
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                      <tr className="bg-gray-100 font-bold">
+                        <td className="border px-3 py-2">ROUND TOTALS</td>
+                        {TOURNAMENT_ROUNDS.map(round => {
+                          const roundTotal = getPlayersByTeam(selectedTeam).reduce((sum, p) => 
+                            sum + (parseFloat(getRoundScore(p.id, round)) || 0), 0
+                          );
+                          return (
+                            <td key={round} className="border px-3 py-2 text-center">
+                              {roundTotal.toFixed(1)}
+                            </td>
+                          );
+                        })}
+                        <td className="border px-3 py-2 text-center text-lg bg-blue-100">
+                          {getTeamScore(selectedTeam).toFixed(1)}
+                        </td>
+                        {adminMode && <td className="border"></td>}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <main className="max-w-7xl mx-auto px-4 py-8">
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+              <div className="px-6 py-4 bg-gray-50 border-b">
+                <h2 className="text-xl font-bold text-gray-900">Leaderboard</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -5425,41 +5585,36 @@
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Rank</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Team</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Total Points</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Active Players</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Total Players</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase">Actions</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Total Points</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {standings.map((team, idx) => (
-                      <tr key={team.name} className={"hover:bg-blue-50 " + (idx === 0 ? "bg-yellow-50" : "")}>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            {idx === 0 && <span className="text-2xl">🥇</span>}
-                            {idx === 1 && <span className="text-2xl">🥈</span>}
-                            {idx === 2 && <span className="text-2xl">🥉</span>}
-                            <span className="font-bold text-lg">{idx + 1}</span>
-                          </div>
+                  <tbody className="divide-y">
+                    {leaderboard.map((item, idx) => (
+                      <tr key={item.team} className="hover:bg-blue-50">
+                        <td className="px-6 py-4 text-2xl">
+                          {idx === 0 && '🥇'}
+                          {idx === 1 && '🥈'}
+                          {idx === 2 && '🥉'}
+                          {idx > 2 && (idx + 1)}
                         </td>
-                        <td className="px-6 py-4 font-semibold text-gray-900">{team.name}</td>
+                        <td className="px-6 py-4 font-semibold text-gray-900">{item.team}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className="text-2xl font-black text-[#009CDE]">{team.totalScore.toFixed(1)}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span className={"text-lg font-bold " + (team.activePlayers > 0 ? "text-green-600" : "text-red-600")}>
-                            {team.activePlayers}
+                          <span className={item.activePlayers > 0 ? "text-green-600 font-semibold" : "text-red-600"}>
+                            {item.activePlayers}
                           </span>
+                          <span className="text-gray-400"> / {item.totalPlayers}</span>
                         </td>
-                        <td className="px-6 py-4 text-center text-gray-600">
-                          {team.players.length}
+                        <td className="px-6 py-4 text-center text-2xl font-bold text-[#009CDE]">
+                          {item.score.toFixed(1)}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 text-center">
                           <button
-                            onClick={() => setSelectedTeam(team)}
-                            className="text-[#009CDE] hover:text-[#0077C8] font-semibold text-sm"
+                            onClick={() => setSelectedTeam(item.team)}
+                            className="px-4 py-2 bg-[#009CDE] text-white rounded-lg hover:bg-[#0077C8] transition-colors text-sm font-semibold"
                           >
-                            View Roster →
+                            View Roster
                           </button>
                         </td>
                       </tr>
@@ -5469,134 +5624,40 @@
               </div>
             </div>
 
-            {/* Team Detail Modal */}
-            {selectedTeam && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedTeam(null)}>
-                <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                  <div className="bg-gradient-to-r from-[#009CDE] to-[#0077C8] text-white p-6">
-                    <h2 className="text-2xl font-bold">{selectedTeam.name}</h2>
-                    <p className="text-sm opacity-90 mt-1">
-                      Total Score: {selectedTeam.totalScore.toFixed(1)} pts • 
-                      {selectedTeam.activePlayers} active • {selectedTeam.players.length} total players
-                    </p>
-                  </div>
-                  <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 sticky top-0">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">Player</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase">School</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Seed</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Status</th>
-                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Tournament Pts</th>
-                          {adminMode && (
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase">Adjust</th>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {selectedTeam.players.map(player => (
-                          <tr key={player.id} className={"hover:bg-blue-50 " + (eliminatedSchools.has(player.school) ? "bg-red-50 opacity-60" : "")}>
-                            <td className="px-4 py-3 font-medium text-gray-900">{player.name}</td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{player.school}</td>
-                            <td className="px-4 py-3 text-center text-sm font-semibold">{player.seed}</td>
-                            <td className="px-4 py-3 text-center">
-                              {eliminatedSchools.has(player.school) ? (
-                                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">❌ Eliminated</span>
-                              ) : (
-                                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✅ Active</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-center text-lg font-bold text-[#009CDE]">
-                              {player.tournamentScore.toFixed(1)}
-                            </td>
-                            {adminMode && (
-                              <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={() => setShowScoreAdjust(player)}
-                                  className="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded"
-                                >
-                                  Edit
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="p-4 bg-gray-50 border-t flex justify-end">
-                    <button onClick={() => setSelectedTeam(null)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Score Adjustment Modal */}
-            {showScoreAdjust && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                  <h3 className="text-lg font-bold mb-4">Adjust Score: {showScoreAdjust.name}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{showScoreAdjust.school} • Current: {showScoreAdjust.tournamentScore.toFixed(1)} pts</p>
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    handleScoreAdjustment(showScoreAdjust.id, e.target.score.value);
-                  }}>
-                    <input
-                      type="number"
-                      name="score"
-                      step="0.1"
-                      defaultValue={showScoreAdjust.tournamentScore}
-                      className="w-full px-3 py-2 border rounded mb-4"
-                      autoFocus
-                    />
-                    <div className="flex gap-2">
-                      <button type="submit" className="flex-1 bg-[#009CDE] text-white px-4 py-2 rounded hover:bg-[#0077C8]">
-                        Save
-                      </button>
-                      <button type="button" onClick={() => setShowScoreAdjust(null)} className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400">
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            )}
-
-            {/* Admin Controls */}
             {adminMode && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h3 className="text-lg font-bold mb-4">Admin Controls</h3>
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-semibold mb-2">Eliminated Schools</h4>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[...new Set(ALL_PLAYERS.map(p => p.school))].sort().map(school => (
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="px-6 py-4 bg-yellow-50 border-b">
+                  <h2 className="text-xl font-bold text-gray-900">🔧 Admin Controls - Eliminated Schools</h2>
+                  <p className="text-sm text-gray-600 mt-1">Toggle schools to mark them as eliminated. Players from eliminated schools will show ❌ in remaining rounds.</p>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {uniqueSchools.map(school => {
+                      const isEliminated = eliminatedSchools.includes(school);
+                      return (
                         <button
                           key={school}
                           onClick={() => handleToggleEliminated(school)}
-                          className={`text-xs px-3 py-2 rounded ${
-                            eliminatedSchools.has(school)
-                              ? "bg-red-100 text-red-700 hover:bg-red-200"
+                          className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
+                            isEliminated 
+                              ? "bg-red-100 text-red-700 hover:bg-red-200" 
                               : "bg-green-100 text-green-700 hover:bg-green-200"
                           }`}
                         >
-                          {eliminatedSchools.has(school) ? "❌" : "✅"} {school}
+                          {isEliminated ? "❌" : "✅"} {school}
                         </button>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
-          </div>
+          </main>
         </div>
       );
     }
 
-    ReactDOM.render(<LiveStandings />, document.getElementById('root'));
+    ReactDOM.render(<PotterCupStandings />, document.getElementById('root'));
   </script>
 </body>
 </html>
