@@ -70,7 +70,7 @@
 
       const upcomingPicks = useMemo(() => {
         const picks = [];
-        for (let i = currentPick; i <= Math.min(currentPick + 20, totalPicks); i++) {
+        for (let i = currentPick; i <= totalPicks; i++) {
           const round = Math.ceil(i / teams.length);
           const teamIdx = draftOrder[i - 1];
           picks.push({
