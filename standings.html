@@ -95,16 +95,18 @@
       const [isRefreshing, setIsRefreshing] = useState(false);
       const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
 
-      // Auto-refresh scores every 5 minutes for everyone
+      // Auto-refresh scores every 5 minutes
       useEffect(() => {
         if (!autoRefreshEnabled) return;
         
         const interval = setInterval(() => {
-          fetchLiveScores();
+          if (adminMode) {
+            fetchLiveScores();
+          }
         }, 5 * 60 * 1000); // 5 minutes
 
         return () => clearInterval(interval);
-      }, [autoRefreshEnabled]);
+      }, [adminMode, autoRefreshEnabled]);
 
       const uniqueSchools = useMemo(() => {
         return [...new Set(players.map(p => p.school))].sort();
@@ -154,7 +156,7 @@
       const handlePasswordSubmit = (e) => {
         e.preventDefault();
         const password = e.target.password.value;
-        if (password === '2121') {
+        if (password === '1284') {
           setAdminMode(true);
           setShowPasswordPrompt(false);
         } else {
@@ -180,143 +182,79 @@
       const fetchLiveScores = async () => {
         setIsRefreshing(true);
         try {
-          // Get today's date in YYYYMMDD format for ESPN API
+          // Get today's date in YYYY/MM/DD format
           const today = new Date();
           const year = today.getFullYear();
           const month = String(today.getMonth() + 1).padStart(2, '0');
           const day = String(today.getDate()).padStart(2, '0');
-          const dateString = `${year}${month}${day}`;
           
-          // Fetch tournament games from ESPN API
-          const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${dateString}&groups=100`;
-          console.log('Fetching from ESPN:', scoreboardUrl);
-          
+          // Fetch tournament games for today
+          const scoreboardUrl = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${year}/${month}/${day}`;
           const scoreboardResponse = await fetch(scoreboardUrl);
           const scoreboardData = await scoreboardResponse.json();
           
-          console.log('Scoreboard data:', scoreboardData);
-          
-          if (!scoreboardData.events || scoreboardData.events.length === 0) {
+          if (!scoreboardData.games || scoreboardData.games.length === 0) {
             console.log('No games today');
-            alert('No games found for today. Scores will update automatically when games start.');
             setIsRefreshing(false);
             return;
           }
 
-          console.log(`Found ${scoreboardData.events.length} games`);
-
           const newPlayerScores = { ...playerScores };
           const newEliminatedSchools = [...eliminatedSchools];
-          let gamesProcessed = 0;
-          let playersMatched = 0;
           
           // Process each game
-          for (const event of scoreboardData.events) {
+          for (const game of scoreboardData.games) {
             try {
-              const gameId = event.id;
-              console.log(`Processing game ${gameId}:`, event.shortName);
+              // Fetch box score for this game
+              const boxScoreUrl = `https://ncaa-api.henrygd.me/game/${game.game_id}/boxscore`;
+              const boxScoreResponse = await fetch(boxScoreUrl);
+              const boxScoreData = await boxScoreResponse.json();
               
-              // Get detailed game data with box score
-              const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary?event=${gameId}`;
-              const summaryResponse = await fetch(summaryUrl);
-              const summaryData = await summaryResponse.json();
+              // Determine which team lost (for elimination)
+              const homeScore = parseInt(game.home.score || 0);
+              const awayScore = parseInt(game.away.score || 0);
+              let losingTeam = null;
               
-              console.log(`Game ${gameId} summary:`, summaryData);
+              if (game.game_state === 'final' && homeScore !== awayScore) {
+                losingTeam = homeScore < awayScore ? game.home.names.full : game.away.names.full;
+                if (!newEliminatedSchools.includes(losingTeam)) {
+                  newEliminatedSchools.push(losingTeam);
+                }
+              }
               
-              // Check if game is complete for eliminations
-              const isComplete = event.status?.type?.completed;
-              
-              // Process box score
-              if (summaryData.boxscore && summaryData.boxscore.players) {
-                console.log('Box score players:', summaryData.boxscore.players);
-                
-                for (const team of summaryData.boxscore.players) {
-                  const teamName = team.team?.displayName || team.team?.name;
-                  console.log(`Processing team: ${teamName}`);
-                  
-                  const teamScore = team.team?.score;
-                  const opponentScore = summaryData.boxscore.players.find(t => t.team.id !== team.team.id)?.team?.score;
-                  
-                  // Check if this team lost (for elimination)
-                  if (isComplete && teamScore < opponentScore) {
-                    if (!newEliminatedSchools.includes(teamName)) {
-                      newEliminatedSchools.push(teamName);
-                      console.log(`Team eliminated: ${teamName}`);
-                    }
-                  }
-                  
-                  // Process player stats
-                  if (team.statistics && team.statistics.length > 0) {
-                    const playerStats = team.statistics[0];
-                    console.log('Player stats for team:', playerStats);
-                    
-                    if (playerStats.athletes) {
-                      console.log(`Found ${playerStats.athletes.length} athletes`);
+              // Process player stats
+              if (boxScoreData.teams) {
+                for (const team of boxScoreData.teams) {
+                  if (team.players) {
+                    for (const apiPlayer of team.players) {
+                      // Try to match player by name and school
+                      const matchedPlayer = players.find(p => 
+                        p.name.toLowerCase() === apiPlayer.name.toLowerCase() && 
+                        p.school.toLowerCase() === team.name.toLowerCase()
+                      );
                       
-                      for (const athlete of playerStats.athletes) {
-                        const playerName = athlete.athlete?.displayName;
-                        const stats = athlete.stats || [];
+                      if (matchedPlayer) {
+                        const points = parseInt(apiPlayer.PTS || 0);
                         
-                        console.log(`Player: ${playerName}, Stats:`, stats);
+                        // Determine which round this is based on date
+                        const gameDate = new Date(game.start_date);
+                        const round = determineRound(gameDate);
                         
-                        // Find points in stats array (usually labeled "PTS")
-                        const points = parseInt(stats[0] || 0);
-                        
-                        // Try to match player by name and school (flexible school matching)
-                        const matchedPlayer = players.find(p => {
-                          const nameLower = p.name.toLowerCase().trim();
-                          const apiNameLower = playerName?.toLowerCase().trim();
-                          const schoolLower = p.school.toLowerCase().trim();
-                          const teamLower = teamName?.toLowerCase().trim();
-                          
-                          // Exact name match required
-                          const nameMatch = nameLower === apiNameLower;
-                          
-                          // Flexible school matching - check if school name is contained in team name
-                          // e.g., "Troy" matches "Troy Trojans", "Connecticut" matches "Connecticut Huskies"
-                          const schoolMatch = teamLower.includes(schoolLower) || schoolLower.includes(teamLower);
-                          
-                          return nameMatch && schoolMatch;
-                        });
-                        
-                        if (matchedPlayer) {
-                          playersMatched++;
-                          console.log(`✓ MATCHED: ${matchedPlayer.name} (${matchedPlayer.school}) - ${points} pts`);
-                          
-                          if (points > 0) {
-                            // Determine which round based on date
-                            const gameDate = new Date(event.date);
-                            const round = determineRound(gameDate);
-                            
-                            if (!newPlayerScores[matchedPlayer.id]) {
-                              newPlayerScores[matchedPlayer.id] = {};
-                            }
-                            
-                            // Add or update points for this round
-                            const currentRoundScore = newPlayerScores[matchedPlayer.id][round] || 0;
-                            newPlayerScores[matchedPlayer.id][round] = Math.max(currentRoundScore, points);
-                            
-                            console.log(`Updated ${matchedPlayer.name}: ${points} pts in ${round}`);
-                          }
-                        } else {
-                          console.log(`✗ NO MATCH for ${playerName} from ${teamName}`);
+                        if (!newPlayerScores[matchedPlayer.id]) {
+                          newPlayerScores[matchedPlayer.id] = {};
                         }
+                        
+                        // Add points to this round
+                        newPlayerScores[matchedPlayer.id][round] = points;
                       }
                     }
                   }
                 }
-              } else {
-                console.log('No box score data for this game');
               }
-              
-              gamesProcessed++;
             } catch (gameError) {
-              console.error(`Error processing game ${event.id}:`, gameError);
+              console.error(`Error processing game ${game.game_id}:`, gameError);
             }
           }
-          
-          console.log(`Total players matched: ${playersMatched}`);
-          console.log('New player scores:', newPlayerScores);
           
           // Update Firebase
           const timestamp = new Date().toLocaleString();
@@ -328,11 +266,10 @@
           setEliminatedSchools(newEliminatedSchools);
           setLastUpdate(timestamp);
           
-          alert(`Scores updated! Processed ${gamesProcessed} games, matched ${playersMatched} players.`);
-          console.log(`Successfully updated ${gamesProcessed} games`);
+          console.log('Scores updated successfully!');
         } catch (error) {
           console.error('Error fetching live scores:', error);
-          alert('Error updating scores: ' + error.message + '. Please try again or check the console for details.');
+          alert('Error updating scores. Check console for details.');
         }
         setIsRefreshing(false);
       };
@@ -408,13 +345,15 @@
                   )}
                 </div>
                 <div className="flex gap-3">
-                  <button
-                    onClick={fetchLiveScores}
-                    disabled={isRefreshing}
-                    className={"px-4 py-2 rounded-lg font-semibold transition-colors " + (isRefreshing ? "bg-gray-400 text-gray-200 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600")}
-                  >
-                    {isRefreshing ? "🔄 Updating..." : "🔄 Refresh Scores"}
-                  </button>
+                  {adminMode && (
+                    <button
+                      onClick={fetchLiveScores}
+                      disabled={isRefreshing}
+                      className={"px-4 py-2 rounded-lg font-semibold transition-colors " + (isRefreshing ? "bg-gray-400 text-gray-200 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600")}
+                    >
+                      {isRefreshing ? "🔄 Updating..." : "🔄 Refresh Scores"}
+                    </button>
+                  )}
                   <button
                     onClick={handleAdminToggle}
                     className={"px-4 py-2 rounded-lg font-semibold transition-colors " + (adminMode ? "bg-yellow-400 text-gray-900" : "bg-white/20 text-white hover:bg-white/30")}
