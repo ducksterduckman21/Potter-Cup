@@ -50,6 +50,15 @@
         }
       });
 
+      const [draftOrder, setDraftOrder] = useState(() => {
+        try {
+          const saved = localStorage.getItem('potterCupDraftOrder');
+          return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+          return [];
+        }
+      });
+
       const [lastUpdate, setLastUpdate] = useState(() => {
         try {
           const saved = localStorage.getItem('potterCupLastScoreUpdate');
@@ -89,10 +98,19 @@
       }, []);
 
       const getPlayersByTeam = (team) => {
-        return Object.entries(draftState)
+        const teamPlayers = Object.entries(draftState)
           .filter(([_, draftedTeam]) => draftedTeam === team)
           .map(([playerId, _]) => players.find(p => p.id === parseInt(playerId)))
           .filter(Boolean);
+        
+        // Sort by draft order
+        return teamPlayers.sort((a, b) => {
+          const indexA = draftOrder.indexOf(a.id);
+          const indexB = draftOrder.indexOf(b.id);
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          return indexA - indexB;
+        });
       };
 
       const getPlayerTotalScore = (playerId) => {
