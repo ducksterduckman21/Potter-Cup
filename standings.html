@@ -180,81 +180,105 @@
       const fetchLiveScores = async () => {
         setIsRefreshing(true);
         try {
-          // Get today's date in YYYY/MM/DD format
+          // Get today's date in YYYYMMDD format for ESPN API
           const today = new Date();
           const year = today.getFullYear();
           const month = String(today.getMonth() + 1).padStart(2, '0');
           const day = String(today.getDate()).padStart(2, '0');
+          const dateString = `${year}${month}${day}`;
           
-          // Using a CORS proxy to access the NCAA API
-          const corsProxy = 'https://api.allorigins.win/raw?url=';
+          // Fetch tournament games from ESPN API
+          const scoreboardUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard?dates=${dateString}&groups=100`;
+          console.log('Fetching from ESPN:', scoreboardUrl);
           
-          // Fetch tournament games for today
-          const scoreboardUrl = `${corsProxy}${encodeURIComponent(`https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${year}/${month}/${day}`)}`;
           const scoreboardResponse = await fetch(scoreboardUrl);
           const scoreboardData = await scoreboardResponse.json();
           
-          if (!scoreboardData.games || scoreboardData.games.length === 0) {
+          if (!scoreboardData.events || scoreboardData.events.length === 0) {
             console.log('No games today');
-            alert('No games found for today. Try again when games are in progress.');
+            alert('No games found for today. Scores will update automatically when games start.');
             setIsRefreshing(false);
             return;
           }
 
           const newPlayerScores = { ...playerScores };
           const newEliminatedSchools = [...eliminatedSchools];
+          let gamesProcessed = 0;
           
           // Process each game
-          for (const game of scoreboardData.games) {
+          for (const event of scoreboardData.events) {
             try {
-              // Fetch box score for this game
-              const boxScoreUrl = `${corsProxy}${encodeURIComponent(`https://ncaa-api.henrygd.me/game/${game.game_id}/boxscore`)}`;
-              const boxScoreResponse = await fetch(boxScoreUrl);
-              const boxScoreData = await boxScoreResponse.json();
+              const gameId = event.id;
               
-              // Determine which team lost (for elimination)
-              const homeScore = parseInt(game.home.score || 0);
-              const awayScore = parseInt(game.away.score || 0);
-              let losingTeam = null;
+              // Get detailed game data with box score
+              const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary?event=${gameId}`;
+              const summaryResponse = await fetch(summaryUrl);
+              const summaryData = await summaryResponse.json();
               
-              if (game.game_state === 'final' && homeScore !== awayScore) {
-                losingTeam = homeScore < awayScore ? game.home.names.full : game.away.names.full;
-                if (!newEliminatedSchools.includes(losingTeam)) {
-                  newEliminatedSchools.push(losingTeam);
-                }
-              }
+              // Check if game is complete for eliminations
+              const isComplete = event.status?.type?.completed;
               
-              // Process player stats
-              if (boxScoreData.teams) {
-                for (const team of boxScoreData.teams) {
-                  if (team.players) {
-                    for (const apiPlayer of team.players) {
-                      // Try to match player by name and school
-                      const matchedPlayer = players.find(p => 
-                        p.name.toLowerCase() === apiPlayer.name.toLowerCase() && 
-                        p.school.toLowerCase() === team.name.toLowerCase()
-                      );
-                      
-                      if (matchedPlayer) {
-                        const points = parseInt(apiPlayer.PTS || 0);
+              // Process box score
+              if (summaryData.boxscore && summaryData.boxscore.players) {
+                for (const team of summaryData.boxscore.players) {
+                  const teamName = team.team?.displayName || team.team?.name;
+                  const teamScore = team.team?.score;
+                  const opponentScore = summaryData.boxscore.players.find(t => t.team.id !== team.team.id)?.team?.score;
+                  
+                  // Check if this team lost (for elimination)
+                  if (isComplete && teamScore < opponentScore) {
+                    if (!newEliminatedSchools.includes(teamName)) {
+                      newEliminatedSchools.push(teamName);
+                      console.log(`Team eliminated: ${teamName}`);
+                    }
+                  }
+                  
+                  // Process player stats
+                  if (team.statistics && team.statistics.length > 0) {
+                    const playerStats = team.statistics[0]; // First stats array contains starters/bench
+                    
+                    if (playerStats.athletes) {
+                      for (const athlete of playerStats.athletes) {
+                        const playerName = athlete.athlete?.displayName;
+                        const stats = athlete.stats || [];
                         
-                        // Determine which round this is based on date
-                        const gameDate = new Date(game.start_date);
-                        const round = determineRound(gameDate);
+                        // Find points in stats array (usually labeled "PTS")
+                        const points = parseInt(stats[0] || 0); // First stat is usually points
                         
-                        if (!newPlayerScores[matchedPlayer.id]) {
-                          newPlayerScores[matchedPlayer.id] = {};
+                        // Try to match player by name and school
+                        const matchedPlayer = players.find(p => {
+                          const nameLower = p.name.toLowerCase().trim();
+                          const apiNameLower = playerName?.toLowerCase().trim();
+                          const schoolLower = p.school.toLowerCase().trim();
+                          const teamLower = teamName?.toLowerCase().trim();
+                          
+                          return nameLower === apiNameLower && schoolLower === teamLower;
+                        });
+                        
+                        if (matchedPlayer && points > 0) {
+                          // Determine which round based on date
+                          const gameDate = new Date(event.date);
+                          const round = determineRound(gameDate);
+                          
+                          if (!newPlayerScores[matchedPlayer.id]) {
+                            newPlayerScores[matchedPlayer.id] = {};
+                          }
+                          
+                          // Add or update points for this round
+                          const currentRoundScore = newPlayerScores[matchedPlayer.id][round] || 0;
+                          newPlayerScores[matchedPlayer.id][round] = Math.max(currentRoundScore, points);
+                          
+                          console.log(`Updated ${matchedPlayer.name}: ${points} pts in ${round}`);
                         }
-                        
-                        // Add points to this round
-                        newPlayerScores[matchedPlayer.id][round] = points;
                       }
                     }
                   }
                 }
               }
+              
+              gamesProcessed++;
             } catch (gameError) {
-              console.error(`Error processing game ${game.game_id}:`, gameError);
+              console.error(`Error processing game ${event.id}:`, gameError);
             }
           }
           
@@ -268,11 +292,11 @@
           setEliminatedSchools(newEliminatedSchools);
           setLastUpdate(timestamp);
           
-          alert('Scores updated successfully!');
-          console.log('Scores updated successfully!');
+          alert(`Scores updated! Processed ${gamesProcessed} games.`);
+          console.log(`Successfully updated ${gamesProcessed} games`);
         } catch (error) {
           console.error('Error fetching live scores:', error);
-          alert('Error updating scores: ' + error.message + '. The API may be temporarily unavailable. Try again in a few minutes.');
+          alert('Error updating scores: ' + error.message + '. Please try again or check the console for details.');
         }
         setIsRefreshing(false);
       };
