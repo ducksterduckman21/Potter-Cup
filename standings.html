@@ -194,6 +194,8 @@
           const scoreboardResponse = await fetch(scoreboardUrl);
           const scoreboardData = await scoreboardResponse.json();
           
+          console.log('Scoreboard data:', scoreboardData);
+          
           if (!scoreboardData.events || scoreboardData.events.length === 0) {
             console.log('No games today');
             alert('No games found for today. Scores will update automatically when games start.');
@@ -201,27 +203,37 @@
             return;
           }
 
+          console.log(`Found ${scoreboardData.events.length} games`);
+
           const newPlayerScores = { ...playerScores };
           const newEliminatedSchools = [...eliminatedSchools];
           let gamesProcessed = 0;
+          let playersMatched = 0;
           
           // Process each game
           for (const event of scoreboardData.events) {
             try {
               const gameId = event.id;
+              console.log(`Processing game ${gameId}:`, event.shortName);
               
               // Get detailed game data with box score
               const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary?event=${gameId}`;
               const summaryResponse = await fetch(summaryUrl);
               const summaryData = await summaryResponse.json();
               
+              console.log(`Game ${gameId} summary:`, summaryData);
+              
               // Check if game is complete for eliminations
               const isComplete = event.status?.type?.completed;
               
               // Process box score
               if (summaryData.boxscore && summaryData.boxscore.players) {
+                console.log('Box score players:', summaryData.boxscore.players);
+                
                 for (const team of summaryData.boxscore.players) {
                   const teamName = team.team?.displayName || team.team?.name;
+                  console.log(`Processing team: ${teamName}`);
+                  
                   const teamScore = team.team?.score;
                   const opponentScore = summaryData.boxscore.players.find(t => t.team.id !== team.team.id)?.team?.score;
                   
@@ -235,15 +247,20 @@
                   
                   // Process player stats
                   if (team.statistics && team.statistics.length > 0) {
-                    const playerStats = team.statistics[0]; // First stats array contains starters/bench
+                    const playerStats = team.statistics[0];
+                    console.log('Player stats for team:', playerStats);
                     
                     if (playerStats.athletes) {
+                      console.log(`Found ${playerStats.athletes.length} athletes`);
+                      
                       for (const athlete of playerStats.athletes) {
                         const playerName = athlete.athlete?.displayName;
                         const stats = athlete.stats || [];
                         
+                        console.log(`Player: ${playerName}, Stats:`, stats);
+                        
                         // Find points in stats array (usually labeled "PTS")
-                        const points = parseInt(stats[0] || 0); // First stat is usually points
+                        const points = parseInt(stats[0] || 0);
                         
                         // Try to match player by name and school
                         const matchedPlayer = players.find(p => {
@@ -255,25 +272,34 @@
                           return nameLower === apiNameLower && schoolLower === teamLower;
                         });
                         
-                        if (matchedPlayer && points > 0) {
-                          // Determine which round based on date
-                          const gameDate = new Date(event.date);
-                          const round = determineRound(gameDate);
+                        if (matchedPlayer) {
+                          playersMatched++;
+                          console.log(`✓ MATCHED: ${matchedPlayer.name} (${matchedPlayer.school}) - ${points} pts`);
                           
-                          if (!newPlayerScores[matchedPlayer.id]) {
-                            newPlayerScores[matchedPlayer.id] = {};
+                          if (points > 0) {
+                            // Determine which round based on date
+                            const gameDate = new Date(event.date);
+                            const round = determineRound(gameDate);
+                            
+                            if (!newPlayerScores[matchedPlayer.id]) {
+                              newPlayerScores[matchedPlayer.id] = {};
+                            }
+                            
+                            // Add or update points for this round
+                            const currentRoundScore = newPlayerScores[matchedPlayer.id][round] || 0;
+                            newPlayerScores[matchedPlayer.id][round] = Math.max(currentRoundScore, points);
+                            
+                            console.log(`Updated ${matchedPlayer.name}: ${points} pts in ${round}`);
                           }
-                          
-                          // Add or update points for this round
-                          const currentRoundScore = newPlayerScores[matchedPlayer.id][round] || 0;
-                          newPlayerScores[matchedPlayer.id][round] = Math.max(currentRoundScore, points);
-                          
-                          console.log(`Updated ${matchedPlayer.name}: ${points} pts in ${round}`);
+                        } else {
+                          console.log(`✗ NO MATCH for ${playerName} from ${teamName}`);
                         }
                       }
                     }
                   }
                 }
+              } else {
+                console.log('No box score data for this game');
               }
               
               gamesProcessed++;
@@ -281,6 +307,9 @@
               console.error(`Error processing game ${event.id}:`, gameError);
             }
           }
+          
+          console.log(`Total players matched: ${playersMatched}`);
+          console.log('New player scores:', newPlayerScores);
           
           // Update Firebase
           const timestamp = new Date().toLocaleString();
@@ -292,7 +321,7 @@
           setEliminatedSchools(newEliminatedSchools);
           setLastUpdate(timestamp);
           
-          alert(`Scores updated! Processed ${gamesProcessed} games.`);
+          alert(`Scores updated! Processed ${gamesProcessed} games, matched ${playersMatched} players.`);
           console.log(`Successfully updated ${gamesProcessed} games`);
         } catch (error) {
           console.error('Error fetching live scores:', error);
