@@ -48,37 +48,32 @@
       const [draftState, setDraftState] = useState({});
       const [lastUpdate, setLastUpdate] = useState(null);
 
-      // Firebase real-time listeners
+      // Firebase real-time listeners - NO API AUTO-REFRESH
       useEffect(() => {
-        // Listen for player scores changes
         const scoresRef = database.ref('playerScores');
         scoresRef.on('value', (snapshot) => {
           const data = snapshot.val();
           if (data) setPlayerScores(data);
         });
 
-        // Listen for eliminated schools changes
         const eliminatedRef = database.ref('eliminatedSchools');
         eliminatedRef.on('value', (snapshot) => {
           const data = snapshot.val();
           if (data) setEliminatedSchools(data);
         });
 
-        // Listen for draft state changes
         const draftRef = database.ref('draftState');
         draftRef.on('value', (snapshot) => {
           const data = snapshot.val();
           if (data) setDraftState(data);
         });
 
-        // Listen for last update timestamp
         const updateRef = database.ref('lastUpdate');
         updateRef.on('value', (snapshot) => {
           const data = snapshot.val();
           if (data) setLastUpdate(data);
         });
 
-        // Cleanup listeners on unmount
         return () => {
           scoresRef.off();
           eliminatedRef.off();
@@ -92,25 +87,10 @@
       const [selectedTeam, setSelectedTeam] = useState(null);
       const [editingPlayer, setEditingPlayer] = useState(null);
       const [editValues, setEditValues] = useState({});
-      const [isRefreshing, setIsRefreshing] = useState(false);
-      const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
-
-      // Auto-refresh scores every 5 minutes
-      useEffect(() => {
-        if (!autoRefreshEnabled) return;
-        
-        const interval = setInterval(() => {
-          if (adminMode) {
-            fetchLiveScores();
-          }
-        }, 5 * 60 * 1000); // 5 minutes
-
-        return () => clearInterval(interval);
-      }, [adminMode, autoRefreshEnabled]);
 
       const uniqueSchools = useMemo(() => {
         return [...new Set(players.map(p => p.school))].sort();
-      }, [players]);
+      }, []);
 
       const getPlayersByTeam = (team) => {
         return Object.entries(draftState)
@@ -179,118 +159,6 @@
         }
       };
 
-      const fetchLiveScores = async () => {
-        setIsRefreshing(true);
-        try {
-          // Get today's date in YYYY/MM/DD format
-          const today = new Date();
-          const year = today.getFullYear();
-          const month = String(today.getMonth() + 1).padStart(2, '0');
-          const day = String(today.getDate()).padStart(2, '0');
-          
-          // Fetch tournament games for today
-          const scoreboardUrl = `https://ncaa-api.henrygd.me/scoreboard/basketball-men/d1/${year}/${month}/${day}`;
-          const scoreboardResponse = await fetch(scoreboardUrl);
-          const scoreboardData = await scoreboardResponse.json();
-          
-          if (!scoreboardData.games || scoreboardData.games.length === 0) {
-            console.log('No games today');
-            setIsRefreshing(false);
-            return;
-          }
-
-          const newPlayerScores = { ...playerScores };
-          const newEliminatedSchools = [...eliminatedSchools];
-          
-          // Process each game
-          for (const game of scoreboardData.games) {
-            try {
-              // Fetch box score for this game
-              const boxScoreUrl = `https://ncaa-api.henrygd.me/game/${game.game_id}/boxscore`;
-              const boxScoreResponse = await fetch(boxScoreUrl);
-              const boxScoreData = await boxScoreResponse.json();
-              
-              // Determine which team lost (for elimination)
-              const homeScore = parseInt(game.home.score || 0);
-              const awayScore = parseInt(game.away.score || 0);
-              let losingTeam = null;
-              
-              if (game.game_state === 'final' && homeScore !== awayScore) {
-                losingTeam = homeScore < awayScore ? game.home.names.full : game.away.names.full;
-                if (!newEliminatedSchools.includes(losingTeam)) {
-                  newEliminatedSchools.push(losingTeam);
-                }
-              }
-              
-              // Process player stats
-              if (boxScoreData.teams) {
-                for (const team of boxScoreData.teams) {
-                  if (team.players) {
-                    for (const apiPlayer of team.players) {
-                      // Try to match player by name and school
-                      const matchedPlayer = players.find(p => 
-                        p.name.toLowerCase() === apiPlayer.name.toLowerCase() && 
-                        p.school.toLowerCase() === team.name.toLowerCase()
-                      );
-                      
-                      if (matchedPlayer) {
-                        const points = parseInt(apiPlayer.PTS || 0);
-                        
-                        // Determine which round this is based on date
-                        const gameDate = new Date(game.start_date);
-                        const round = determineRound(gameDate);
-                        
-                        if (!newPlayerScores[matchedPlayer.id]) {
-                          newPlayerScores[matchedPlayer.id] = {};
-                        }
-                        
-                        // Add points to this round
-                        newPlayerScores[matchedPlayer.id][round] = points;
-                      }
-                    }
-                  }
-                }
-              }
-            } catch (gameError) {
-              console.error(`Error processing game ${game.game_id}:`, gameError);
-            }
-          }
-          
-          // Update Firebase
-          const timestamp = new Date().toLocaleString();
-          await database.ref('playerScores').set(newPlayerScores);
-          await database.ref('eliminatedSchools').set(newEliminatedSchools);
-          await database.ref('lastUpdate').set(timestamp);
-          
-          setPlayerScores(newPlayerScores);
-          setEliminatedSchools(newEliminatedSchools);
-          setLastUpdate(timestamp);
-          
-          console.log('Scores updated successfully!');
-        } catch (error) {
-          console.error('Error fetching live scores:', error);
-          alert('Error updating scores. Check console for details.');
-        }
-        setIsRefreshing(false);
-      };
-      
-      const determineRound = (gameDate) => {
-        // Tournament dates (adjust these for actual 2025 tournament dates)
-        const roundOf64Start = new Date('2025-03-18');
-        const roundOf32Start = new Date('2025-03-20');
-        const sweet16Start = new Date('2025-03-27');
-        const elite8Start = new Date('2025-03-29');
-        const finalFourStart = new Date('2025-04-05');
-        const championshipStart = new Date('2025-04-07');
-        
-        if (gameDate >= championshipStart) return 'Championship';
-        if (gameDate >= finalFourStart) return 'Final Four';
-        if (gameDate >= elite8Start) return 'Elite 8';
-        if (gameDate >= sweet16Start) return 'Sweet 16';
-        if (gameDate >= roundOf32Start) return 'Round of 32';
-        return 'Round of 64';
-      };
-
       const handleEditPlayer = (player) => {
         setEditingPlayer(player.id);
         const currentScores = playerScores[player.id] || {};
@@ -345,15 +213,6 @@
                   )}
                 </div>
                 <div className="flex gap-3">
-                  {adminMode && (
-                    <button
-                      onClick={fetchLiveScores}
-                      disabled={isRefreshing}
-                      className={"px-4 py-2 rounded-lg font-semibold transition-colors " + (isRefreshing ? "bg-gray-400 text-gray-200 cursor-not-allowed" : "bg-green-500 text-white hover:bg-green-600")}
-                    >
-                      {isRefreshing ? "🔄 Updating..." : "🔄 Refresh Scores"}
-                    </button>
-                  )}
                   <button
                     onClick={handleAdminToggle}
                     className={"px-4 py-2 rounded-lg font-semibold transition-colors " + (adminMode ? "bg-yellow-400 text-gray-900" : "bg-white/20 text-white hover:bg-white/30")}
