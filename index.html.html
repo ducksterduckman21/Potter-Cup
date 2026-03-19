@@ -8,6 +8,26 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  
+  <script>
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQbt5egY3YBu5bwK0OChMVrcSWZD544zA",
+      authDomain: "potter-cup-scoring.firebaseapp.com",
+      databaseURL: "https://potter-cup-scoring-default-rtdb.firebaseio.com",
+      projectId: "potter-cup-scoring",
+      storageBucket: "potter-cup-scoring.firebasestorage.app",
+      messagingSenderId: "904464654449",
+      appId: "1:904464654449:web:d1cb7359e1cbcfc51c3bd0"
+    };
+    
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body class="bg-gray-50">
   <div id="root"></div>
@@ -24,38 +44,36 @@
     function PotterCup() {
       const [players] = useState(PLAYERS_DATA);
       const [teams] = useState(TEAM_NAMES);
-      const [draftedPlayers, setDraftedPlayers] = useState(() => {
-        try {
-          const saved = localStorage.getItem('potterCupDraftState');
-          return saved ? JSON.parse(saved) : {};
-        } catch (e) {
-          return {};
-        }
-      });
-      const [disabledPlayers, setDisabledPlayers] = useState(() => {
-        try {
-          const saved = localStorage.getItem('potterCupDisabledPlayers');
-          return saved ? new Set(JSON.parse(saved)) : new Set();
-        } catch (e) {
-          return new Set();
-        }
-      });
-      const [currentPick, setCurrentPick] = useState(() => {
-        try {
-          const saved = localStorage.getItem('potterCupCurrentPick');
-          return saved ? parseInt(saved) : 1;
-        } catch (e) {
-          return 1;
-        }
-      });
-      const [picksOrder, setPicksOrder] = useState(() => {
-        try {
-          const saved = localStorage.getItem('potterCupPicksOrder');
-          return saved ? JSON.parse(saved) : [];
-        } catch (e) {
-          return [];
-        }
-      });
+      const [draftedPlayers, setDraftedPlayers] = useState({});
+      const [disabledPlayers, setDisabledPlayers] = useState(new Set());
+      const [currentPick, setCurrentPick] = useState(1);
+
+      // Firebase real-time listeners
+      useEffect(() => {
+        const draftRef = database.ref('draftState');
+        draftRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data) setDraftedPlayers(data);
+        });
+
+        const disabledRef = database.ref('disabledPlayers');
+        disabledRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data) setDisabledPlayers(new Set(data));
+        });
+
+        const pickRef = database.ref('currentPick');
+        pickRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data) setCurrentPick(data);
+        });
+
+        return () => {
+          draftRef.off();
+          disabledRef.off();
+          pickRef.off();
+        };
+      }, []);
       const [sortConfig, setSortConfig] = useState({ key: 'seasonPPG', direction: 'desc' });
       const [searchTerm, setSearchTerm] = useState('');
       const [schoolFilter, setSchoolFilter] = useState('ALL');
@@ -182,22 +200,13 @@
           [player.id]: currentTeam
         };
         
-        const newPicksOrder = [...picksOrder];
-        newPicksOrder[currentPick - 1] = player.id;  // Store player ID at this pick position
-        
         setDraftedPlayers(newDrafted);
-        setPicksOrder(newPicksOrder);
         const newPick = currentPick + 1;
         setCurrentPick(newPick);
         
         try {
-          localStorage.setItem('potterCupDraftState', JSON.stringify(newDrafted));
-          localStorage.setItem('potterCupPicksOrder', JSON.stringify(newPicksOrder));
-          localStorage.setItem('potterCupCurrentPick', newPick.toString());
-          const draftedPlayerIds = Object.keys(newDrafted).map(id => parseInt(id));
-          localStorage.setItem('potterCupDrafts', JSON.stringify(
-            draftedPlayerIds.map(id => ({ playerId: id }))
-          ));
+          database.ref('draftState').set(newDrafted);
+          database.ref('currentPick').set(newPick);
         } catch (e) {
           console.error('Failed to save draft state:', e);
         }
@@ -211,20 +220,11 @@
         
         if (currentPick > 1) {
           const newPick = currentPick - 1;
-          const newPicksOrder = [...picksOrder];
-          newPicksOrder[newPick - 1] = null;  // Clear the last pick
-          
           setCurrentPick(newPick);
-          setPicksOrder(newPicksOrder);
           
           try {
-            localStorage.setItem('potterCupDraftState', JSON.stringify(newDrafted));
-            localStorage.setItem('potterCupPicksOrder', JSON.stringify(newPicksOrder));
-            localStorage.setItem('potterCupCurrentPick', newPick.toString());
-            const draftedPlayerIds = Object.keys(newDrafted).map(id => parseInt(id));
-            localStorage.setItem('potterCupDrafts', JSON.stringify(
-              draftedPlayerIds.map(id => ({ playerId: id }))
-            ));
+            database.ref('draftState').set(newDrafted);
+            database.ref('currentPick').set(newPick);
           } catch (e) {
             console.error('Failed to save draft state:', e);
           }
@@ -241,7 +241,7 @@
         setDisabledPlayers(newDisabled);
         
         try {
-          localStorage.setItem('potterCupDisabledPlayers', JSON.stringify([...newDisabled]));
+          database.ref('disabledPlayers').set([...newDisabled]);
         } catch (e) {
           console.error('Failed to save disabled players:', e);
         }
