@@ -262,14 +262,21 @@
                         // Find points in stats array (usually labeled "PTS")
                         const points = parseInt(stats[0] || 0);
                         
-                        // Try to match player by name and school
+                        // Try to match player by name and school (flexible school matching)
                         const matchedPlayer = players.find(p => {
                           const nameLower = p.name.toLowerCase().trim();
                           const apiNameLower = playerName?.toLowerCase().trim();
                           const schoolLower = p.school.toLowerCase().trim();
                           const teamLower = teamName?.toLowerCase().trim();
                           
-                          return nameLower === apiNameLower && schoolLower === teamLower;
+                          // Exact name match required
+                          const nameMatch = nameLower === apiNameLower;
+                          
+                          // Flexible school matching - check if school name is contained in team name
+                          // e.g., "Troy" matches "Troy Trojans", "Connecticut" matches "Connecticut Huskies"
+                          const schoolMatch = teamLower.includes(schoolLower) || schoolLower.includes(teamLower);
+                          
+                          return nameMatch && schoolMatch;
                         });
                         
                         if (matchedPlayer) {
