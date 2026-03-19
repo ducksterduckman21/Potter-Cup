@@ -91,8 +91,13 @@
       const getPlayersByTeam = (team) => {
         return Object.entries(draftState)
           .filter(([_, draftedTeam]) => draftedTeam === team)
-          .map(([playerId, _]) => players.find(p => p.id === parseInt(playerId)))
-          .filter(Boolean);
+          .map(([playerId, _]) => {
+            const player = players.find(p => p.id === parseInt(playerId));
+            const pickNumber = pickOrder[playerId];
+            return { ...player, pickNumber };
+          })
+          .filter(player => player && player.id)
+          .sort((a, b) => (a.pickNumber || 999) - (b.pickNumber || 999));
       };
 
       const getPlayerTotalScore = (playerId) => {
@@ -295,11 +300,18 @@
                         return (
                           <tr key={player.id} className={isEliminated ? "bg-red-50" : "hover:bg-blue-50"}>
                             <td className="border px-3 py-2">
-                              <div className="font-medium">
-                                {player.name}
-                                {player.injuryStatus && <span className="ml-1 text-yellow-500">⚡</span>}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                                  R{Math.ceil(player.pickNumber / 12)}
+                                </span>
+                                <div>
+                                  <div className="font-medium">
+                                    {player.name}
+                                    {player.injuryStatus && <span className="ml-1 text-yellow-500">⚡</span>}
+                                  </div>
+                                  <div className="text-xs text-gray-600">{player.school}</div>
+                                </div>
                               </div>
-                              <div className="text-xs text-gray-600">{player.school}</div>
                             </td>
                             {TOURNAMENT_ROUNDS.map(round => {
                               const score = getRoundScore(player.id, round);
