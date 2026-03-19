@@ -50,9 +50,9 @@
         }
       });
 
-      const [draftOrder, setDraftOrder] = useState(() => {
+      const [draftPicks, setDraftPicks] = useState(() => {
         try {
-          const saved = localStorage.getItem('potterCupDraftOrder');
+          const saved = localStorage.getItem('potterCupPicksOrder');
           return saved ? JSON.parse(saved) : [];
         } catch (e) {
           return [];
@@ -98,19 +98,27 @@
       }, []);
 
       const getPlayersByTeam = (team) => {
-        const teamPlayers = Object.entries(draftState)
+        const teamPlayerIds = Object.entries(draftState)
           .filter(([_, draftedTeam]) => draftedTeam === team)
-          .map(([playerId, _]) => players.find(p => p.id === parseInt(playerId)))
-          .filter(Boolean);
+          .map(([playerId, _]) => parseInt(playerId));
         
-        // Sort by draft order
-        return teamPlayers.sort((a, b) => {
-          const indexA = draftOrder.indexOf(a.id);
-          const indexB = draftOrder.indexOf(b.id);
-          if (indexA === -1) return 1;
-          if (indexB === -1) return -1;
-          return indexA - indexB;
+        // Create a map of playerId -> pick number from the picks array
+        const playerPickMap = {};
+        draftPicks.forEach((playerId, index) => {
+          if (playerId) {
+            playerPickMap[playerId] = index;  // index is the pick order (0-based)
+          }
         });
+        
+        // Get player objects and sort by their pick number
+        return teamPlayerIds
+          .map(playerId => players.find(p => p.id === playerId))
+          .filter(Boolean)
+          .sort((a, b) => {
+            const pickA = playerPickMap[a.id] !== undefined ? playerPickMap[a.id] : 9999;
+            const pickB = playerPickMap[b.id] !== undefined ? playerPickMap[b.id] : 9999;
+            return pickA - pickB;
+          });
       };
 
       const getPlayerTotalScore = (playerId) => {
